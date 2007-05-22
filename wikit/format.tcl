@@ -478,7 +478,7 @@ namespace eval Wikit::Format {
     upvar irep irep
 
     # Compat: (Bugfix) Added " to the regexp as proper boundary of an url.
-    set re {\m(https?|ftp|news|mailto|file):(\S+[^\]\)\s\.,!\?;:'>"])} ;# "]}]
+    set re {\m(https?|ftp|news|mailto|file):(\S+[^\]\)\s\.,!\?;:'>"])}
     set txt 0
     set end [string length $text]
 
