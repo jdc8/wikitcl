@@ -51,7 +51,7 @@ namespace eval WikitWub {
     }
 
     # page template for standard page decoration
-    variable pageT {title: [armour $name]
+    variable pageT {title: $name
 
 	$Title
 	<p>$C</p>
@@ -155,6 +155,7 @@ namespace eval WikitWub {
     variable head {
 	<meta name='robots' content='noindex,nofollow' />
 	<style type='text/css' media='all'>@import url(/wikit.css);</style>
+	<link rel='alternate' type='application/rss+xml' title='RSS' href='/rss.xml'>
     }
 
     # convertor for x-html-fragment to html
@@ -261,7 +262,7 @@ namespace eval WikitWub {
 		set name $page
 	    }
 	}
-	return "<a rel='nofollow' href='/[string trimleft $url /]'>[armour $name]</a>"
+	return "<a rel='nofollow' href='/[string trimleft $url /]'>$name</a>"
     }
 
     variable protected
@@ -748,7 +749,7 @@ namespace eval WikitWub {
 	    0 {
 		set backRef ""
 		set Refs ""
-		set Title [armour $name]
+		set Title $name
 	    }
 	    1 {
 		set backRef /_ref/$N
