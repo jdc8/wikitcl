@@ -1407,7 +1407,7 @@ namespace eval Wikit::Format {
   }
 
   proc armour_quote { t } {
-    return [string map [list \" &quot; ' {&#39;}] $t]
+    return [string map [list \" &quot; ' "&\#39\;"] $t]
   }
 
 } ;# end of namespace
