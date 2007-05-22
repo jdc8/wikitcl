@@ -78,22 +78,20 @@ namespace eval Wikit {
         }
       }
 
+      set flags {}
       if {$readonly} {
-        set flags "-readonly"
+        lappend flags -readonly
         set tst readable
       } else {
-        set flags ""
         set tst writable
       }
 
       if {$shared} {
-        set shared "-shared"
-      } else {
-        set shared ""
+        lappend flags -shared
       }
 
       set msg ""
-      if {[catch {mk::file open $db $name -nocommit $flags $shared} msg eo]
+      if {[catch {eval mk::file open $db $name -nocommit $flags} msg eo]
           && [file $tst $name]} {
 
         # if we can write and/or read the file but can't open
