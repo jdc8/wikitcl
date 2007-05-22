@@ -1,4 +1,5 @@
-# Set up for embedded use
+# wikit.tcl -- Set up for embedded use
+# originally written by Jean-Claude Wippler, 2000..2007 - may be used freely
 
 package provide Wikit 1.0
 package require Tk
@@ -20,10 +21,10 @@ namespace eval Wikit {
 
     # if called via Wikit::init (i.e. via a package) then default to readonly
 
-    proc init {db {ro 1} {topwin ""} {page ""} {shared 0}} {
+    proc init {db {ro 1} {topwin ""} {page ""}} {
       variable readonly
       set readonly $ro
-      WikiDatabase $db wdb $shared
+      WikiDatabase $db
       if {$page == "" \
             || [set id [mk::select wdb.pages -count 1 name $page]] == ""} {
         set id 0
