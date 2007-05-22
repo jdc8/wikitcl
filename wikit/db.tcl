@@ -1,7 +1,8 @@
-# Collection of low-level Wiki database accessors and mutators
+# db.tcl -- Collection of low-level Wiki database accessors and mutators
+# originally written by Jean-Claude Wippler, 2000..2007 - may be used freely
 #
 # admin:
-# Wiki - 
+# Wiki -
 # WikiDatabase - open the Wiki database
 #
 # accessors:
@@ -40,7 +41,7 @@
 # of the $WIKI_HIST environment variable.  The system only tracks dates
 # and ip's inside the datafile for the recent page, not page contents.
 
-package provide Wikit::Db 1.0
+package provide Wikit::Db 1.1
 package require Wikit::Utils
 package require Wikit::Format
 
@@ -51,11 +52,11 @@ namespace eval Wikit {
 
   # mutators
   namespace export SavePage SavePageDB DoCommit DoSync FixPageRefs
-  
+
   variable readonly -1	;# use the file permissions
-  
+
   # Code for opening, closing, locking, searching, and modifying views
-  
+
   proc Wiki {name args} {
     if {$name == "-"} {
       set page [lindex [split [lindex $args 0] "/"] end]
@@ -63,12 +64,12 @@ namespace eval Wikit {
     }
     link - [Wikit::Format::quote $name] [join $args ?]
   }
-  
+
   proc WikiDatabase {name {db wdb} {shared 0}} {
     variable readonly
-    
-    if {[lsearch -exact [mk::file open] $db] == -1} {
+    variable wikifile $name
 
+    if {[lsearch -exact [mk::file open] $db] == -1} {
       if {$readonly == -1} {
         if {[file exists $name] && ![file writable $name]} {
           set readonly 1
@@ -76,27 +77,29 @@ namespace eval Wikit {
           set readonly 0
         }
       }
-      
+
       if {$readonly} {
-        set flags -readonly
+        set flags "-readonly"
         set tst readable
       } else {
-        set flags {}
+        set flags ""
         set tst writable
       }
 
       if {$shared} {
-        lappend flags -shared
+        set shared "-shared"
+      } else {
+        set shared ""
       }
 
       set msg ""
-      if {[catch {mk::file open $db $name -nocommit {*}$flags} msg eo]
-          && [file $tst $name]
-        } {
+      if {[catch {mk::file open $db $name -nocommit $flags $shared} msg eo]
+          && [file $tst $name]} {
+
         # if we can write and/or read the file but can't open
         # it using mk then it is almost always inside a starkit,
         # so we copy it to memory and open it from there
-        
+
         set readonly 1
         mk::file open $db
         set fd [open $name]
@@ -104,26 +107,26 @@ namespace eval Wikit {
         close $fd
         set msg ""
       }
-        
+
       if {$msg != "" && ![string equal $msg $db]} {
         error $msg
       }
-
-      mk::view layout $db.pages	{name page date:I who}
-      mk::view layout $db.refs	{from:I to:I}
-      
-      # if there are no references, probably it's the first time, so recalc
-      if {!$readonly && [mk::view size $db.refs] == 0} {
-        # this can take quite a while, unfortunately - but only once
-        ::Wikit::FixPageRefs
-      }
-      
-      # get rid of some old cruft, now that stored data has become incompatible
-      mk::view layout $db.archive {} ;# get rid of old def
-      catch { mk::view size $db.admin 0 }
-      catch { mk::view size $db.scripts 0 }
-      catch { mk::view size $db.archive 0 }
     }
+
+    mk::view layout $db.pages	{name page date:I who}
+    mk::view layout $db.refs	{from:I to:I}
+
+    # if there are no references, probably it's the first time, so recalc
+    if {!$readonly && [mk::view size $db.refs] == 0} {
+      # this can take quite a while, unfortunately - but only once
+      ::Wikit::FixPageRefs
+    }
+
+    # get rid of some old cruft, now that stored data has become incompatible
+    mk::view layout $db.archive {} ;# get rid of old def
+    catch { mk::view size $db.admin 0 }
+    catch { mk::view size $db.scripts 0 }
+    catch { mk::view size $db.archive 0 }
   }
 
   # get page info into specified var names
@@ -137,7 +140,7 @@ namespace eval Wikit {
       }
     }
   }
-  
+
   proc pagevars {num args} {
     # mk::get returns an item, not a list, if given a single property name
     if {[llength $args] == 1} {
@@ -153,7 +156,7 @@ namespace eval Wikit {
     set title [mk::get $db.pages!$id name]
     return $title
   }
-  
+
   proc GetPage {id {db wdb}} {
     switch $id {
       2		{ SearchResults [SearchList] }
@@ -161,7 +164,7 @@ namespace eval Wikit {
       default	{ return [mk::get $db.pages!$id page] }
     }
   }
-  
+
   # addRefs - a newly created page $id contains $refs references to other pages
   # Add these references to the .ref view.
   proc addRefs {id db refs} {
@@ -173,22 +176,22 @@ namespace eval Wikit {
       }
     }
   }
-  
+
   # delRefs - remove all references from page $id to anywhere
   proc delRefs {id db} {
     set v [mk::select $db.refs from $id]	;# the set of all references from $id
-    
+
     # delete from last to first
     set n [llength $v]
     while {[incr n -1] >= 0} {
       mk::row delete $db.refs![lindex $v $n]
     }
   }
-  
+
   # FixPageRefs - recreate the entire refs view
   proc FixPageRefs {{db wdb}} {
     mk::view size $db.refs 0	;# delete all contents from the .refs view
-    
+
     # visit each page, recreating its refs
     mk::loop c $db.pages {
       set id [mk::cursor position c]
@@ -200,17 +203,17 @@ namespace eval Wikit {
     }
     DoCommit
   }
-  
+
   # Helper to 'SavePage'. Changes all references to page 'name'
   # contained in the 'text' into references to page 'newName'. This is
   # performed if a page changes its title, to keep all internal
   # references in sync. Only pages which are known to refer to the
   # changed page (see 'SavePage') are modified.
-  
+
   proc replaceLink {text old new} {
     # this code is not fullproof, it misses links in keyword lists
     # this means page renames are not 100% accurate (but refs still are)
-    
+
     set newText ""
     foreach line [split $text \n] {
       # don't touch quoted lines, except if its a list item
@@ -224,57 +227,57 @@ namespace eval Wikit {
     }
     join $newText \n
   }
-  
+
   # SavePageDB - store page $id ($who, $text, $newdate)
   proc SavePageDB {db id text who newName {newdate ""}} {
     set changed 0
-    
+
     pagevarsDB $db $id name page
 
     if {$newName != $name} {
       set changed 1
-      
+
       # rewrite all pages referencing $id changing old name to new
       foreach x [mk::select $db.refs to $id] {
         set x [mk::get $db.refs!$x from]
         set y [mk::get $db.pages!$x page]
         mk::set $db.pages!$x page [replaceLink $y $name $newName]
       }
-      
+
       # don't forget to adjust links in this page itself
       set text [replaceLink $text $name $newName]
-      
+
       AdjustTitleCache $name $newName $id
       mk::set $db.pages!$id name $newName
     }
-    
+
     if {$newdate != ""} {
       # change the date if requested
       mk::set $db.pages!$id date $newdate
     }
-    
+
     # avoid creating a log entry and committing if nothing changed
     set text [string trimright $text]
     if {!$changed && $text == $page} return
-    
+
     # make sure it parses before deleting old references
     set newRefs [StreamToRefs [TextToStream $text] [list ::Wikit::InfoProc $db]]
     delRefs $id $db
     addRefs $id $db $newRefs
-    
+
     if {$id == 3} {
       catch { gButton::modify Help -text [lindex [Wikit::GetTitle 3] 0] }
     }
-    
+
     mk::set $db.pages!$id page $text who $who
-    
+
     if {$newdate == ""} {
       mk::set $db.pages!$id date [clock seconds]
       AddLogEntry $id $db
       DoCommit $db
     }
   }
-  
+
   # SavePage - store page $id ($who, $text, $newdate)
   proc SavePage {id text who newName {newdate ""}} {
     return [SavePageDB wdb $id $text $who $newName $newdate]
@@ -284,7 +287,7 @@ namespace eval Wikit {
   proc DoCommit {{db wdb}} {
     mk::file commit $db
   }
-  
+
   # DoSync - sync Wikit to the contents of a URL
   proc DoSync {url {db wdb}} {
     puts "Looking for changes at $url ..."

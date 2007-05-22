@@ -14,6 +14,7 @@ foreach {name val} {
     readonly 0
     wikidb wikit.tkd
     upflag ""
+    wubdir "../../Wub/"
     history history
     utf8 0
     encoding utf-8
@@ -56,9 +57,9 @@ if {[info exists starkit::topdir]} {
     set drdir [file join $topdir docroot]
 } else {
     # unpacked startup
-    set topdir [file normalize [file dirname $home]]
+    set wubdir [file normalize $wubdir]
     foreach lib {Mime extensions Wub Domains stx Utilities} {
-	lappend auto_path [file join $topdir $lib]
+	lappend auto_path [file join $wubdir $lib]
     }
     lappend auto_path $home
 }
