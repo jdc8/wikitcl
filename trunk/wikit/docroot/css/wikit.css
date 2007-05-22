@@ -38,12 +38,114 @@ pre {
    color: #802020;
 }
 
-/* Style for the page footer which uses <p id='footer'>  */
-#footer {
-   height: 31px;
-   background: url("/wiki-img.gif") no-repeat top right;
-}
-
 dt {
    font-weight: bold;
+}
+
+/* layout */ 
+
+div#header{
+  background: #EEE;
+  text-align: right;
+}
+
+div#header h1{
+  height:50px;
+  line-height:50px;
+  margin:0;
+  padding-left:10px;
+  background: #EEE;
+  text-align: left;
+}
+
+div#footer{
+  background: #EEE;
+}
+
+div#footer p{
+  text-align: center;
+}
+
+div#menu_area{
+  background:#DDD;
+}
+
+div#menu_area ul{
+  PADDING-LEFT: 0px;
+  MARGIN-LEFT: 15px
+}
+
+div#navigation{
+  background:#CCC;
+}
+
+div#extra{
+  background:#BBB;
+}
+
+div#wrapper{
+  float:right;
+  width:100%;
+  margin-left:-200px;
+}
+
+div#content{
+  margin-left:200px;
+}
+
+div#menu_area{
+  float:left;
+  width:200px;
+}
+
+div#navigation{
+  float:left;
+  clear:left;
+  width:200px;
+}
+
+div#extra{
+  float:left;
+  clear:left;
+  width:200px;
+}
+
+div#footer{
+  clear:both;
+  width:100%;
+}
+
+/*--------------------------------------------------|
+| dTree 2.05 | www.destroydrop.com/javascript/tree/ |
+|---------------------------------------------------|
+| Copyright (c) 2002-2003 Geir Landrö               |
+|--------------------------------------------------*/
+
+.dtree {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	color: #666;
+	white-space: nowrap;
+}
+.dtree img {
+	border: 0px;
+	vertical-align: middle;
+}
+.dtree a {
+	color: #333;
+	text-decoration: none;
+}
+.dtree a.node, .dtree a.nodeSel {
+	white-space: nowrap;
+	padding: 1px 2px 1px 2px;
+}
+.dtree a.node:hover, .dtree a.nodeSel:hover {
+	color: #333;
+	text-decoration: underline;
+}
+.dtree a.nodeSel {
+	background-color: #c0d2ec;
+}
+.dtree .clip {
+	overflow: hidden;
 }
