@@ -57,9 +57,9 @@ if {[info exists starkit::topdir]} {
     set drdir [file join $topdir docroot]
 } else {
     # unpacked startup
-    set wubdir [file normalize $wubdir]
+    set topdir [file normalize $wubdir]
     foreach lib {Mime extensions Wub Domains stx Utilities} {
-	lappend auto_path [file join $wubdir $lib]
+	lappend auto_path [file join $topdir $lib]
     }
     lappend auto_path $home
 }
