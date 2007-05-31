@@ -1130,7 +1130,7 @@ namespace eval Wikit::Format {
     }
 
     # Create page-TOC as dtree javascript
-    set toc ""
+    set toc "function page_toc() {\n"
     if { [llength $tocpos] } {
       append toc "dp = new dTree('dp');\n"
       append toc "dp.config.useLines = 1;\n"
@@ -1153,8 +1153,9 @@ namespace eval Wikit::Format {
         lappend parentl $id
         incr id
       }
-      append toc "document.getElementById(containerid).innerHTML=dp;\n"
+      append toc "document.getElementById('page_toc').innerHTML=dp;\n"
     }
+    append toc "}\n"
 
     # Get rid of spurious newline at start of each quoted area.
     regsub -all "<pre>\n" $result "<pre>" result
@@ -1407,7 +1408,7 @@ namespace eval Wikit::Format {
   }
 
   proc armour_quote { t } {
-    return [string map [list \" &quot; ' "&\#39\;"] $t]
+    return [string map {\" &quot; ' &#39\;} $t]
   }
 
 } ;# end of namespace
