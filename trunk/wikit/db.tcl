@@ -140,6 +140,7 @@ namespace eval Wikit {
   }
 
   proc pagevars {num args} {
+    set num [scan $num %d] ;# 2005-02-17 get rid of leading zeros
     # mk::get returns an item, not a list, if given a single property name
     if {[llength $args] == 1} {
       uplevel 1 [list set $args [mk::get wdb.pages!$num $args]]
