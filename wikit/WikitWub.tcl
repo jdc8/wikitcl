@@ -29,7 +29,7 @@ package provide WikitWub 1.0
 ::struct::queue inQ
 variable request ""
 
-# ::Wikit::GetPage {id} - 
+# ::Wikit::GetPage {id} -
 # ::Wikit::Expand_HTML {text}
 # ::Wikit::pagevars {id args} - assign values to named vars
 
@@ -50,41 +50,78 @@ namespace eval WikitWub {
 	$C
     }
 
+    proc div {ids content} {
+	set divs ""
+	foreach id $ids {
+	    append divs "<div class='$id'>\n"
+	}
+	append divs [uplevel 1 subst [list $content]]
+	append divs "\n"
+	append divs [string repeat "\n</div>" [llength $ids]]
+	return $divs
+    }
+
+    proc divID {ids content} {
+	set divs ""
+	foreach id $ids {
+	    append divs "<div id='$id'>\n"
+	}
+	append divs [uplevel 1 subst [list $content]]
+	append divs "\n"
+	append divs [string repeat "\n</div>" [llength $ids]]
+	return $divs
+    }
+
+    proc script { script } { 
+	return "<script type='text/javascript'>$script</script>"
+    }
+
     # page template for standard page decoration
     variable pageT {title: $name
 
-	$Title
-	<p>$C</p>
-	<hr noshade />
-	<p id='footer'>[join $menu { - }]</p>
-	<p><form action='/_search' method='get'><input name='S' type='text' value='Search'></form>
-	</p>
+	[div container {
+	    [div header {<h1 class='title'>$Title</h1>}]
+	    [div {wrapper content} {<p>$C</p>}]
+	    <hr noshade />
+	    [div footer "<p>[join $menu { - }]</p>
+		<p><form action='/_search' method='get'>
+		<input name='S' type='text' value='Search'>
+		</form></p>"]
+        }]
     }
 
+    # page sent when constructing a reference page
+    variable refs {title: References to $N
+
+	[div container {
+	    [div header "<h1>References to [Ref $N]</h1>"]
+	    [div {wrapper content} $C]
+	    <hr noshade />
+	    [div footer "<p>[join $menu { - }]</p>
+		<p><form action='/_search' method='get'>
+		<input name='S' type='text' value='Search'>
+		</form></p>"]
+	}]
+     }
+
     # page sent when editing a page
-    variable edit {
-	<h2>[Ref $N]</h2>
+    variable edit {title: Editing $N
+
+	[div header "<h1>[Ref $N]</h1>"]
 	<form method='post' action='/_save/$N'>
-	<textarea rows='30' cols='72' name='C' style='width:100%'>[GetPage $N]</textarea>
+	<textarea rows='30' cols='72' name='C' style='width:100%'>$C</textarea>
 	<p />
 	<input type='hidden' name='O' value='[list $date $who]'>
 	<input type='submit' name='save' value='Save' [expr {$nick eq "" ? "disabled" : ""}] />
 	<input type='submit' name='cancel' value='Cancel' /></form>
     }
 
-    # page sent when constructing a reference page
-    variable refs {
-	<h2>References to [Ref $N]</h2>
-	<ul>$result</ul>
-	<hr noshade />
-	<p id='footer'>[join $menu { - }]</p>
-    }
-
     variable maxAge "next month"	;# maximum age of login cookie
     variable cookie "wikit"		;# name of login cookie
 
     # page sent to enable login
-    variable login {
+    variable login {title: login
+
 	<p>You must have a nickname to post here</p>
 	<form action='/_login' method='post'>
 	<fieldset><legend>Login</legend>
@@ -95,7 +132,8 @@ namespace eval WikitWub {
     }
 
     # page sent when a browser sent bad utf8
-    variable badutf {
+    variable badutf {title: bad UTF-8
+
 	<h2>Encoding error on page $N - [Ref $N $name]</h2>
 	<p><bold>Your changes have NOT been saved</bold>,
 	because	the content your browser sent contains bogus characters.
@@ -107,7 +145,8 @@ namespace eval WikitWub {
     }
 
     # page sent when a save causes edit conflict
-    variable conflict {
+    variable conflict {title: Edit Conflict on $N
+
 	<h2>Edit conflict on page $N - [Ref $N $name]</h2>
 	<p><bold>Your changes have NOT been saved</bold>,
 	because	someone (at IP address $who) saved
@@ -119,9 +158,9 @@ namespace eval WikitWub {
 	<hr size=1 />
     }
 
-    # converter from x-system to html-fragment
+    # converter from x-text/system to html-fragment
     # arranges for headers metadata
-    proc .text/x-system.text/x-html-fragment {rsp} {
+    proc .x-text/system.text/x-html-fragment {rsp} {
 	# split out headers
 	set headers ""
 	set body [split [string trimleft [dict get $rsp -content] \n] \n]
@@ -138,7 +177,7 @@ namespace eval WikitWub {
 	    # this is a header line
 	    set val [lassign [split $line :] tag]
 	    dict lappend rsp -headers "<$tag>[string trim [join $val]]</$tag>"
-	    Debug.convert {.text/x-system.text/x-html-fragment '$tag:$val' - $start}
+	    Debug.convert {.x-text/system.text/x-html-fragment '$tag:$val' - $start}
 	}
 
 	set content "[join [lrange $body $start end] \n]\n"
@@ -198,9 +237,7 @@ namespace eval WikitWub {
 		    content-type text/html]
     }
 
-    proc /state {} {
-	upvar 1 response r
-	set r [Http NoCache $r]
+    proc /state {r} {
 	set state [::thread::send $::thread::parent {Httpd state}]
 	set result "<table border='1'>\n"
 	append result <tr><th> [join {socket thread backend ip conflict start end log} </th><th>] </th></tr> \n
@@ -209,13 +246,10 @@ namespace eval WikitWub {
 	}
 	append result </table> \n
 
-	return $result
+	return [Http NoCache [Http Ok $r $result]]
     }
 
-    proc /activity {{L "current"} {F "html"} args} {
-	upvar 1 response r
-	set r [Http NoCache $r]
-
+    proc /activity {r {L "current"} {F "html"} args} {
 	# generate an activity page
 	if {$L eq "log"} {
 	    set act [::thread::send $::thread::parent {Httpd activity_log}]
@@ -243,13 +277,13 @@ namespace eval WikitWub {
 		append result </table>
 	    }
 	}
-	return $result
+
+	return [Http NoCache [Http Ok $r $result]]
     }
 
     # /rev - revisions - not implemented
-    proc /rev {args} {
-	upvar 1 response r
-	set r [Http NotImplemented $r]
+    proc /rev {r args} {
+	return [Http NotImplemented $r]
     }
 
     # Ref - utility proc to generate an <A> from a page id
@@ -267,16 +301,13 @@ namespace eval WikitWub {
 
     variable protected
     variable menus
-    array set protected {Home 0 About 1 Search 2 Help 3 Changes 4 HoneyPot 5 TOC 6 Init 9}
+    array set protected {Home 0 About 1 Search 2 Help 3 Changes 4 HoneyPot 5 TOC 8 Init 9}
     foreach {n v} [array get protected] {
 	set protected($v) $n
 	set menus($v) [Ref $v $n]
     }
 
-    proc /login {{nickname ""} {R ""}} {
-	upvar 1 response r
-	set r [Http NoCache $r]
-
+    proc /login {r {nickname ""} {R ""}} {
 	# cleanse nickname
 	regsub -all {[^A-Za-z0-0_]} $nickname {} nickname
 
@@ -284,7 +315,8 @@ namespace eval WikitWub {
 	    # this is a call to /login with no args,
 	    # in order to generate the /login page
 	    set R [Http Referer $r]
-	    variable login; return [subst $login]
+	    variable login;
+	    return [Http NoCache [Http Ok $r [subst $login] x-text/system]]
 	}
 
 	if {[dict exists $r -cookies]} {
@@ -305,7 +337,7 @@ namespace eval WikitWub {
 		set age [list -max-age $maxAge]
 	    }
 	}
-	
+
 	if {$maxAge} {
 	    #set age [list -max-age $maxAge]
 	    set then [expr {$maxAge + [clock seconds]}]
@@ -325,7 +357,8 @@ namespace eval WikitWub {
 		set R "http://[dict get $r host]/0"
 	    }
 	}
-	set r [Http Redirect $r $R]
+
+	return [Http NoCache [Http Redirect $r $R]]
     }
 
     proc who {r} {
@@ -346,7 +379,7 @@ namespace eval WikitWub {
     proc locate {page {exact 1}} {
 	Debug.wikit {locate '$page'}
 	variable cnt
-	
+
 	# try exact match on page name
 	if {[string is integer -strict $page]} {
 	    Debug.wikit {locate - is integer $page}
@@ -360,7 +393,7 @@ namespace eval WikitWub {
 		Debug.wikit {locate - unique by name - $N}
 		return $N
 	    }
-	    
+
 	    0 {
 		# no match on page name,
 		# do a glob search over names,
@@ -383,13 +416,13 @@ namespace eval WikitWub {
 	set ::Wikit::searchLong [regexp {^(.*)\*$} $page x ::Wikit::searchKey]
 	Debug.wikit {locate - kw search}
 	return 2	;# the search page
-	
+
 	# these two globals (searchKey and searchLong) control the
 	# representation of page 2 - they will cause it to return
 	# a list of matches
     }
 
-    proc /search {{S ""} args} {
+    proc /search {r {S ""} args} {
 	if {$S eq "" && [llength $args] > 0} {
 	    set S [lindex $args 0]
 	}
@@ -397,31 +430,25 @@ namespace eval WikitWub {
 	Debug.wikit {/search: '$S'}
 	dict set request -suffix $S
 	dict set request -prefix "/$S"
-	upvar 1 response r
+
 	set ::Wikit::searchLong [regexp {^(.*)\*$} $S x ::Wikit::searchKey]
-	set r [WikitWub do $r 2]
+	return [WikitWub do $r 2]
     }
 
-    proc /save {N C O save} {
-	upvar 1 response r
-
+    proc /save {r N C O save} {
 	if {![string is integer -strict $N]} {
-	    set r [Http NotFound $r]
-	    return
+	    return [Http NotFound $r]
 	}
 	if {$N >= [mk::view size wdb.pages]} {
-	    set r [Http NotFound $r]
-	    return
+	    return [Http NotFound $r]
 	}
 
-	set r [Http NoCache $r]
 	if {[catch {
 	    ::Wikit::pagevars $N name date who
 	}]} {
-	    set r [Http NotFound $r <h2>$N is not a valid page.</h2>]
-	    return
+	    return [Http NotFound $r <h2>$N is not a valid page.</h2>]
 	}
-    
+
 	# is the caller logged in?
 	set nick [who $r]
 	Debug.wikit {/save who: $nick - modified:"$date $who" O:$O }
@@ -435,7 +462,7 @@ namespace eval WikitWub {
 	    # added 2002-06-13 - edit conflict detection
 	    if {$O != [list $date $who]} {
 		variable conflict
-		return [subst $conflict]
+		return [Http NoCache [Http Ok $r [subst $conflict] x-text/system]]
 	    }
 
 	    # newline-normalize content
@@ -449,7 +476,7 @@ namespace eval WikitWub {
 		    set C [string replace $C $point $point "BOGUS"]
 		}
 		variable badutf
-		return [subst $badutf]
+		return [Http NoCache [Http Ok $r [subst $badutf] x-text/system]]
 	    }
 
 	    # Only actually save the page if the user selected "save"
@@ -476,8 +503,7 @@ namespace eval WikitWub {
 	    }
 	}
 
-	set r [Http Redirect $r "http://[dict get $r host]/$N"]
-	return
+	return [Http Redirect $r "http://[dict get $r host]/$N"]
     }
 
     proc GetPage {id} {
@@ -485,26 +511,20 @@ namespace eval WikitWub {
     }
 
     # /reload - direct url to reload numbered pages from fs
-    proc /reload {} {
+    proc /reload {r} {
 	foreach {}
     }
 
     # called to generate an edit page
-    proc /edit {N args} {
-	upvar 1 response r
-	set r [Http NoCache $r]
-
+    proc /edit {r N args} {
 	if {![string is integer -strict $N]} {
-	    set r [Http NotFound $r]
-	    return
+	    return [Http NotFound $r]
 	}
-	if {$N < 11} {
-	    set r [Http Forbidden $r]
-	    return
+	if {$N < 10} {
+	    return [Http Forbidden $r]
 	}
 	if {$N >= [mk::view size wdb.pages]} {
-	    set r [Http NotFound $r]
-	    return
+	    return [Http NotFound $r]
 	}
 
 	# is the caller logged in?
@@ -512,16 +532,16 @@ namespace eval WikitWub {
 	if {$nick eq ""} {
 	    variable login
 	    set R ""	;# make it return here
-	    set Login [subst $login]
 	    # TODO KBK: Perhaps allow anon edits with a CAPTCHA?
 	    # Or at least give a link to the page that gets the cookie back.
-	    return $Login
+	    return [Http NoCache [Http Ok $r [subst $login] x-text/system]]
 	}
 
 	::Wikit::pagevars $N name date who
 
 	set who_nick ""
 	regexp {^(.+)[,@]} $who - who_nick
+	set C [GetPage $N]
 
 	variable edit; set result [subst $edit]
 	
@@ -534,36 +554,33 @@ namespace eval WikitWub {
 	if {$nick ne ""} {
 	    append result " (you are: <bold>$nick</bold>)"
 	}
-	return $result
+
+	return [Http NoCache [Http Ok $r $result x-text/system]]
     }
 
-    proc /motd {} {
+    proc /motd {r} {
 	variable motd
 	catch {set motd [::fileutil::cat [file join $::config(docroot) motd]]}
 
-	upvar 1 response r
 	invalidate $r 4	;# make the new motd show up
 
 	set R [Http Referer $r]
 	if {$R eq ""} {
-	    set r [Http Redirect $r "http://[dict get $r host]/0"]
+	    return [Http Redirect $r "http://[dict get $r host]/0"]
 	} else {
-	    set r [Http Redirect $r $R]
+	    return [Http Redirect $r $R]
 	}
     }
 
     # called to generate a page with references
-    proc /ref {N} {
-	upvar 1 response r
+    proc /ref {r N} {
 	#set N [dict get $r -suffix]
 	Debug.wikit {/ref $N}
 	if {![string is integer -strict $N]} {
-	    set r [Http NotFound $r]
-	    return
+	    return [Http NotFound $r]
 	}
 	if {$N >= [mk::view size wdb.pages]} {
-	    set r [Http NotFound $r]
-	    return
+	    return [Http NotFound $r]
 	}
 
 	set refList ""
@@ -578,13 +595,14 @@ namespace eval WikitWub {
 	# the following sorts again on 1st word, knowing sorts are stable
 
 	set refList [lsort -dict -index 0 [lsort -dict $refList]]
-	set result ""
+	set C "<ul>"
 	foreach x $refList {
 	    lassign $x name from
 	    ::Wikit::pagevars $from who date
-	    append result <li>[::Wikit::GetTimeStamp $date]
-	    append result " . . . [Ref $from] . . . $who</li>"
+	    append C <li>[::Wikit::GetTimeStamp $date]
+	    append C " . . . [Ref $from] . . . $who</li>"
 	}
+	append C "</ul>"
 
 	variable protected
 	variable menus
@@ -592,7 +610,8 @@ namespace eval WikitWub {
 	foreach m {Search Changes About Home} {
 	    lappend menu $menus($protected($m))
 	}
-	variable refs; return [subst $refs]
+	variable refs; 
+	return [Http Ok $r [subst $refs] x-text/system]
     }
 
     proc InfoProc {ref} {
@@ -602,59 +621,72 @@ namespace eval WikitWub {
 	if {$date == 0} {
 	    set id _edit/$id ;# enter edit mode for missing links
 	}
-    
+
 	return [list /$id $name $date]
     }
 
-    proc search {key} {
+    proc search {key date} {
 	Debug.wikit {search: '$key'}
 	set long [regexp {^(.*)\*$} $key x key]
 	set fields name
 	if {$long} {
 	    lappend fields page
 	}
-	
-	set rows [mk::select wdb.pages -rsort date -keyword $fields $key]
+
+	if { $date == 0 } {
+	    set rows [mk::select wdb.pages -rsort date -keyword $fields $key]
+	} else {
+	    set rows [mk::select wdb.pages -max date $date -rsort date -keyword $fields $key]
+	}
 
 	# tclLog "SearchResults key <$key> long <$searchLong>"
+	set tcount 0
+	set rdate $date
 	set count 0
 	set result "Searched for \"'''$key'''\" (in page titles"
 	if {$long} {
 	    append result { and contents}
 	}
 	append result "):\n\n"
-	
+
 	foreach i $rows {
+	    incr tcount
 	    # these are fake pages, don't list them
 	    if {$i == 2 || $i == 4 || $i == 5} continue
 
 	    ::Wikit::pagevars $i date name
-	    # these are fake pages, don't list them
-	    if {$date == 0} continue
+	    if {$date == 0} continue	;# don't list empty pages
 
 	    # ignore "near-empty" pages with at most 1 char, 30-09-2004
 	    if {[mk::get wdb.pages!$i -size page] <= 1} continue
 
+	    append result "   * [::Wikit::GetTimeStamp $date] . . . \[$name\]\n"
+	    set rdate $date
+
 	    incr count
-	    if {$count > 100} {
-		append result "''Remaining [expr {[llength $rows] - 100}] matches omitted...''"
+	    if {$count >= 100} {
+		#append result "''Remaining [expr {[llength $rows] - 100}] matches omitted...''"
 		break
 	    }
-	    
-	    append result "   * [::Wikit::GetTimeStamp $date] . . . \[$name\]\n"
 	}
 	
 	if {$count == 0} {
 	    append result "   * '''''No matches found'''''\n"
+	    set rdate 0
 	} else {
 	    append result "   * ''Displayed $count matches''\n"
+	    if {[llength $rows] > $tcount} {
+		append result "   * ''Remaining [expr {[llength $rows] - $tcount}] matches omitted...''\n"
+	    } else {
+		set rdate 0
+	    }
 	}
 	
 	if {!$long} {
 	    append result "\n''Tip: append an asterisk to search the page contents as well as titles.''"
 	}
 
-	return $result
+	return [list $result $rdate]
     }
 
     proc do {r term} {
@@ -687,8 +719,23 @@ namespace eval WikitWub {
 		} {
 		    # search page with search term supplied
 		    set search "value='[armour $term]'"
-		    set C [::Wikit::TextToStream [search $term]]
+
+		    # determine search date
+		    if {[Query exists $qd F]} {
+			set qdate [Query value $qd F]
+			if {![string is integer -strict $qdate]} {
+			    set qdate 0
+			}
+		    } else {
+			set qdate 0
+		    }
+
+		    lassign [search $term $qdate] C nqdate
+		    set C [::Wikit::TextToStream $C]
 		    lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U
+		    if { $nqdate } {
+			append C "<p><a href='/_search?S=[armour $term]&F=$nqdate'>More search results...</a></p>"
+		    }
 		} else {
 		    # send a search page
 		    set search ""
@@ -697,14 +744,14 @@ namespace eval WikitWub {
 
 		variable searchT; set C [subst $searchT]
 		set name "Search"
-		set cacheit 0
+		set cacheit 0	;# don't cache searches
 	    }
 
 	    4 {
 		# Recent Changes page
 		variable motd
 		set C [::Wikit::TextToStream "${motd}[::Wikit::RecentChanges wdb]"]
-		lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U
+		lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U T
 
 		set name "Recent Changes"
 	    }
@@ -726,7 +773,7 @@ namespace eval WikitWub {
 		    }
 		    .tk {
 			set C [::Wikit::TextToStream [GetPage $N]]
-			lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
+			lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U T
 		    }
 		    .str {
 			set C [::Wikit::TextToStream [GetPage $N]]
@@ -734,7 +781,7 @@ namespace eval WikitWub {
 		    }
 		    default {
 			set C [::Wikit::TextToStream [GetPage $N]]
-			lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U
+			lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U T
 		    }
 		}
 	    }
@@ -753,7 +800,7 @@ namespace eval WikitWub {
 	    }
 	    1 {
 		set backRef /_ref/$N
-		set Refs "[Ref $backRef Reference] - " 
+		set Refs "[Ref $backRef Reference] - "
 		set Title [Ref $backRef $name]
 	    }
 	    default {
@@ -795,11 +842,11 @@ namespace eval WikitWub {
 	    }
 	}
 
-	set Title "<h2 class='title'>$Title</h2>"
+	set Title "<h1 class='title'>$Title</h1>"
 	if {0} {
 	    # get the page title
 	    if {![regsub {^<p>(<img src=".*?")>} $C [Ref 0 $backRef] C]} {
-		set Title "<h2 class='title'>$Title</h2>"
+		set Title "<h1 class='title'>$Title</h1>"
 	    } else {
 		set Title ""
 	    }
@@ -808,10 +855,9 @@ namespace eval WikitWub {
 	variable pageT
 	set page [string trimleft [subst $pageT] \n]
 	if {$cacheit} {
-	    set r [Http CacheableContent $r $date $page text/x-system]
-	    return [Http DCache $r]
+	    return [Http DCache [Http CacheableContent $r $date $page x-text/system]]
 	} else {
-	    return [Http NoCache [Http Ok $r $page text/x-system]]
+	    return [Http NoCache [Http Ok $r $page x-text/system]]
 	}
     }
 
