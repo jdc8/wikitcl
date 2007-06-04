@@ -435,7 +435,7 @@ namespace eval Wikit::Format {
       FIXED  {^(===)$}
       CODE   {^(======)$}
       OPTION {^(\+\+\+)$}
-      EVAL {^(\+eval)(\s?)(.+)$}
+      #EVAL {^(\+eval)(\s?)(.+)$}
     } {
       # Compat: Remove restriction to multiples of 3 spaces.
       if {[regexp $re $line - pfx aux txt]} {
