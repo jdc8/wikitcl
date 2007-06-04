@@ -979,7 +979,7 @@ proc incoming {req} {
 		} {
 		    set ip [lindex [split [dict get $request x-forwarded-for] ,] 0]
 		}
-		thread::send -async $::thread::parent [list Httpd block $ip]
+		thread::send -async $::thread::parent [list Httpd block $ip "Bogus URL"]
 
 		# send the bot a 404
 		set response [Http NotFound $request]
