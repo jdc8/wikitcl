@@ -3,6 +3,7 @@ lappend auto_path /usr/lib/
 
 package require Mk4tcl
 
+# set some default configuration flags and values
 foreach {name val} {
     listener_port 8080
     base "/tmp/wiki"
@@ -117,7 +118,7 @@ foreach file [::fileutil::find $docroot  [lambda {file} {
 }]] {
     set dfile [file join [pwd] $file]
     file copy [file join $drdir [K [file link $dfile] [file delete $dfile]]] $dfile
-}    
+}
 
 # initialize the mime package
 package require Mime
