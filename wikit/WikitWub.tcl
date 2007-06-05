@@ -541,7 +541,7 @@ namespace eval WikitWub {
 
 	set who_nick ""
 	regexp {^(.+)[,@]} $who - who_nick
-	set C [GetPage $N]
+	set C [armour [GetPage $N]]
 
 	variable edit; set result [subst $edit]
 	
