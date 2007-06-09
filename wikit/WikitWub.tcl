@@ -108,7 +108,7 @@ namespace eval WikitWub {
     variable edit {title: Editing $N
 
 	[div header "<h1>[Ref $N]</h1>"]
-	<form method='post' action='/_save/$N'>
+	<form method='post' action='/_save/$N' enctype='application/x-www-form-urlencoded;encoding=utf-8'>
 	<textarea rows='30' cols='72' name='C' style='width:100%'>$C</textarea>
 	<p />
 	<input type='hidden' name='O' value='[list $date $who]'>
