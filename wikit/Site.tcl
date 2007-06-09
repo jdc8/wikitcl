@@ -18,7 +18,6 @@ foreach {name val} {
     wubdir "../../Wub/"
     history history
     utf8 0
-    encoding utf-8
     cmdport 8082
 } {
     set $name $val
@@ -30,11 +29,6 @@ catch {
 }
 foreach {name val} $argv {
     set $name $val	;# set global config vars
-}
-
-# set the character encoding
-if {[info exists encoding]} {
-    encoding system $encoding
 }
 
 if {$profile} {
