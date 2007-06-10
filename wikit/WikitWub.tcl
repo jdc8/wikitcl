@@ -15,8 +15,6 @@ package require Http
 package require Cookies
 package require WikitRss
 
-package require utf8
-
 package require Honeypot
 Honeypot init dir [file join $::config(docroot) captcha]
 
@@ -46,6 +44,7 @@ namespace eval WikitWub {
     variable searchT {
 	<form action='/_search' method='get'>
 	<p>Enter the search phrase:<input name='S' type='text' $search> Append an asterisk (*) to search page contents as well</p>
+	<input type='hidden' name='_charset_'>
 	</form>
 	$C
     }
@@ -76,6 +75,14 @@ namespace eval WikitWub {
 	return "<script type='text/javascript'>$script</script>"
     }
 
+    # return a search form
+    proc searchF {} {
+	return {<form action='/_search' method='get'>
+	    <input type='hidden' name='_charset_'>
+	    <input name='S' type='text' value='Search'>
+	    </form>}
+    }
+
     # page template for standard page decoration
     variable pageT {title: $name
 
@@ -84,9 +91,7 @@ namespace eval WikitWub {
 	    [div {wrapper content} {<p>$C</p>}]
 	    <hr noshade />
 	    [div footer "<p>[join $menu { - }]</p>
-		<p><form action='/_search' method='get'>
-		<input name='S' type='text' value='Search'>
-		</form></p>"]
+		<p>[searchF]</p>"]
         }]
     }
 
@@ -98,9 +103,7 @@ namespace eval WikitWub {
 	    [div {wrapper content} $C]
 	    <hr noshade />
 	    [div footer "<p>[join $menu { - }]</p>
-		<p><form action='/_search' method='get'>
-		<input name='S' type='text' value='Search'>
-		</form></p>"]
+		<p>[searchF]</p>"]
 	}]
      }
 
@@ -108,10 +111,11 @@ namespace eval WikitWub {
     variable edit {title: Editing $N
 
 	[div header "<h1>[Ref $N]</h1>"]
-	<form method='post' action='/_save/$N' enctype='application/x-www-form-urlencoded;encoding=utf-8'>
+	<form method='post' action='/_save/$N'>
 	<textarea rows='30' cols='72' name='C' style='width:100%'>$C</textarea>
 	<p />
 	<input type='hidden' name='O' value='[list $date $who]'>
+	<input type='hidden' name='_charset_'>
 	<input type='submit' name='save' value='Save' [expr {$nick eq "" ? "disabled" : ""}] />
 	<input type='submit' name='cancel' value='Cancel' /></form>
     <hr size=1>
@@ -492,11 +496,16 @@ namespace eval WikitWub {
 	    set C [string map {\r\n \n \r \n} $C]
 
 	    # check the content for utf8 correctness
-	    set point [::utf8::findbad $C]
-	    if {$point < [string length $C] - 1} {
+	    # this metadata is set by Query parse/cconvert
+	    set metadata [Query metadata [dict get $r -Query] C]
+	    set point [Dict get? -bad]
+	    if {$point ne ""
+		&& $point < [string length $C] - 1
+	    } {
 		if {$point >= 0} {
 		    incr point
-		    set C [string replace $C $point $point "BOGUS"]
+		    binary scan [string index $C $point] H* bogus
+		    set C [string replace $C $point $point "<BOGUS 0x$bogus>"]
 		}
 		variable badutf
 		return [Http NoCache [Http Ok $r [subst $badutf] x-text/system]]
@@ -1144,14 +1153,15 @@ set script [mk::get wdb.pages!9 page]
 catch {eval $script}
 
 # move utf8 regexp into utf8 package
+# utf8 package is loaded by Query
 set ::utf8::utf8re $config(utf8re); unset config(utf8re)
 
 # initialize RSS feeder
 WikitRss init wdb "Tcler's Wiki" http://wiki.tcl.tk/
 
 Debug on log 10
-Debug on log 10
 
+Debug off query 10
 Debug off wikit 10
 Debug off direct 10
 Debug off convert 10
