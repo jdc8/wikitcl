@@ -44,7 +44,7 @@ namespace eval WikitWub {
 	<h1>The Wiki is currently in Maintenance Mode</h1>
 	<p>No new edits can be accepted for the moment.</p>
 	<p>Reason: $readonly</p>
-	<p><a href='$N'>Return to the page you were reading</a>.</p>
+	<p><a href='/$N'>Return to the page you were reading</a>.</p>
     }
 
     variable motd ""
