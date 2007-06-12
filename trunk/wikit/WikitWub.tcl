@@ -323,6 +323,71 @@ namespace eval WikitWub {
 	return [Http NotImplemented $r]
     }
 
+    # /rev - revisions
+    proc /rev {r N {S 0} {L 25}} {
+	Debug.wikit {/rev $N $S $L}
+	if {![string is integer -strict $N]
+	    || ![string is integer -strict $S]
+	    || ![string is integer -strict $L]
+	    || $N >= [mk::view size wdb.pages]
+	    || $S < 0
+	    || $L <= 0} {
+	    return [Http NotFound $r]
+	}
+
+	set result "<h2>Change history of [Ref $N]</h2>"
+	set links ""
+	set nver [expr {1 + [mk::view size wdb.pages!$N.changes]}]
+	if {$S > 0} {
+	    set pstart [expr {$S - $L}]
+	    if {$pstart < 0} {
+		set pstart 0
+	    }
+	    append links "<a href=" \" /_rev/ $N ?S= $pstart &L= $L \" >
+	    append links "Previous " $L </a> " "
+	}
+	set nstart [expr {$S + $L}]
+	if {$nstart < $nver} {
+	    if {$links ne {}} {
+		append links { - }
+	    }
+	    append links "<a href=" \" /_rev/ $N ?S= $nstart &L= $L \" >
+	    append links "Next " $L </a>
+	}
+	if {$links ne {}} {
+	    append result <p> $links </p> \n
+	}
+	if {[catch {Wikit::ListPageVersionsDB wdb $N $L $S} versions]} {
+	    append result <pre> $versions </pre>
+	} else {
+	    Wikit::pagevars $N name
+	    append result "<table border=1>\n<tr>"
+	    foreach column {{Revision} {Date} {Modified By}} {
+		append result <th> $column </th>
+	    }
+	    append result </tr>\n
+	    foreach row $versions {
+		foreach {vn date who} $row break
+		append result <tr><td> {<a href=} \" /_getrev/ $N \
+		    ?V= $vn \" { rel="nofollow">} $vn </a></td><td> \
+		    [clock format $date \
+			 -format "%Y-%m-%d %H:%M:%S UTC" \
+			 -gmt true] \
+		    </td><td> $who </td></tr> \n
+	    }
+	    append result </table> \n
+	}
+	append result <p> $links </p> \n
+	variable protected
+	variable menus
+	set menu {}
+	foreach m {Search Changes About Home} {
+	    lappend menu $menus($protected($m))
+	}
+	append result {<p id="footer"} [join $menu { - }] </p>
+	return [Http NoCache [Http Ok $r $result]]
+    }
+
     # Ref - utility proc to generate an <A> from a page id
     proc Ref {url {name "" }} {
 	if {$name eq ""} {
