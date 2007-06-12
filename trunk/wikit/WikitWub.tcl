@@ -500,14 +500,14 @@ namespace eval WikitWub {
 	    if {$pstart < 0} {
 		set pstart 0
 	    }
-	    append links [<a> [list href $N?S=$pstart&L=$L] "Previous $L"]
+	    append links [<a> href $N?S=$pstart&L=$L "Previous $L"]
 	}
 	set nstart [expr {$S + $L}]
 	if {$nstart < $nver} {
 	    if {$links ne {}} {
 		append links { - }
 	    }
-	    append links [<a> [list href $N?S=$nstart&L=$L] "Next $L"]
+	    append links [<a> href $N?S=$nstart&L=$L "Next $L"]
 	}
 	if {$links ne {}} {
 	    append result <p> $links </p> \n
@@ -521,7 +521,7 @@ namespace eval WikitWub {
 	    foreach row $versions {
 		lassign $row vn date who
 		append result <tr><td>
-		append result [<a> [list href /_revision/$N?V=$vn rel nofollow] $vn]
+		append result [<a> href /_revision/$N?V=$vn rel nofollow $vn]
 		append result </td><td>
 		append result [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
 		append result </td><td> $who </td></tr> \n
@@ -536,7 +536,7 @@ namespace eval WikitWub {
 	foreach m {Search Changes About Home} {
 	    lappend menu $menus($protected($m))
 	}
-	append result [<p> {id footer} [join $menu { - }]]
+	append result [<p> id footer [join $menu { - }]]
 	return [Http NoCache [Http Ok $r $result]]
     }
 
