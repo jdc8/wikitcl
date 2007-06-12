@@ -97,7 +97,7 @@ namespace eval WikitWub {
 
 	[div container {
 	    [div header {<h1 class='title'>$Title</h1>}]
-	    [expr {[info exists $ro]?$ro:""}]
+	    [expr {[info exists ro]?$ro:""}]
 	    [div {wrapper content} {<p>$C</p>}]
 	    <hr noshade />
 	    [div footer "<p>[join $menu { - }]</p>
