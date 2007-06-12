@@ -846,12 +846,13 @@ namespace eval WikitWub {
     proc /motd {r} {
 	variable motd
 	catch {set motd [::fileutil::cat [file join $::config(docroot) motd]]}
+	set motd [string trim $motd]
 
 	invalidate $r 4	;# make the new motd show up
 
 	set R [Http Referer $r]
 	if {$R eq ""} {
-	    return [Http Redirect $r "http://[dict get $r host]/0"]
+	    return [Http Redirect $r "http://[dict get $r host]/4"]
 	} else {
 	    return [Http Redirect $r $R]
 	}
