@@ -38,6 +38,15 @@ variable request ""
 # returns a list: /$id (with suffix of @ if the page is new), $name, modification $date
 
 namespace eval WikitWub {
+    variable readonly ""
+    variable roT {title: Wiki is currently Read-Only
+
+	<h1>The Wiki is currently in Maintenance Mode</h1>
+	<p>No new edits can be accepted for the moment.</p>
+	<p>Reason: $readonly</p>
+	<p><a href='$N'>Return to the page you were reading</a>.</p>
+    }
+
     variable motd ""
 
     # page sent in response to a search
@@ -463,6 +472,11 @@ namespace eval WikitWub {
     }
 
     proc /save {r N C O save} {
+	variable readonly; variable roT
+	if {$readonly ne ""} {
+	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]
+	}
+
 	if {![string is integer -strict $N]} {
 	    return [Http NotFound $r]
 	}
@@ -549,6 +563,11 @@ namespace eval WikitWub {
 
     # called to generate an edit page
     proc /edit {r N args} {
+	variable readonly; variable roT
+	if {$readonly ne ""} {
+	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]
+	}
+
 	if {![string is integer -strict $N]} {
 	    return [Http NotFound $r]
 	}
