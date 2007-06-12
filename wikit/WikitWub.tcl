@@ -318,14 +318,171 @@ namespace eval WikitWub {
 	return [Http NoCache [Http Ok $r $result]]
     }
 
-    # /rev - revisions - not implemented
-    proc /rev {r args} {
-	return [Http NotImplemented $r]
+    proc get_page_with_version {N V A} {
+	if {$A} {
+	    set aC [::Wikit::AnnotatePageVersion $N $V]
+	    set C ""
+	    set prevVersion -1
+	    foreach a $aC {
+		lassign $a line lineVersion time who
+		if { $lineVersion != $prevVersion } {
+		    if { $prevVersion != -1 } {
+			append C "\n<<<<<<"
+		    }
+		    append C "\n>>>>>>$N;$lineVersion;$who;" [clock format $time -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
+		    set prevVersion $lineVersion
+		}
+		append C "\n$line"
+	    }
+	    if { $prevVersion != -1 } {
+		append C "\n<<<<<<"
+	    }
+	} elseif { $V >= 0 } {
+	    set C [::Wikit::GetPageVersion $N $V]
+	} else {
+	    set C [GetPage $N]
+	}
+	return $C
     }
 
-    # /rev - revisions
-    proc /rev {r N {S 0} {L 25}} {
-	Debug.wikit {/rev $N $S $L}
+    proc /diff {r N {V -1} {D -1}} {
+	Debug.wikit {/diff $args}
+
+	set ext [file extension $N]	;# file extension?
+	set N [file rootname $N]	;# it's a simple single page
+
+	if {![string is integer -strict $N]
+	    || ![string is integer -strict $V]
+	    || ![string is integer -strict $D]
+            || $N < 0
+	    || $N >= [mk::view size wdb.pages]
+	    || $V < 0
+	    || $D < 0
+	    || {$ext ni {"" .txt .tk .str}}
+	} {
+	    return [Http NotFound $r]
+	}
+
+	set nver [expr {1 + [mk::view size wdb.pages!$N.changes]}]
+	if { $V >= $nver || $D >= $nver } {
+	    return [Http NotFound $r]
+	}
+
+	Wikit::pagevars $N pname
+	set menu {}
+	if {$V >= 0} {
+	    switch -- $ext {
+		.txt {
+		    set C "Difference for page $N between version $V and $D not available yet."
+		    return [Http NoCache [Http Ok $r $C text/plain]]
+		}
+		.tk {
+		    set Title "<h1>Difference between version $V and $D for [Ref $N]</h1>"
+		    set name "Difference between version $V and $D for $pname"
+		    set C "Difference for page $N between version $V and $D not available yet."
+		}
+		.str {
+		    set C "Difference for $N between version $V and $D not available yet."
+		    return [Http NoCache [Http Ok $r $C text/plain]]
+		}
+		default {
+		    set Title "<h1>Difference between version $V and $D for [Ref $N]</h1>"
+		    set name "Difference between version $V and $D for $pname"
+		    set C "Difference for page $N between version $V and $D not available yet."
+		}
+	    }
+	}
+
+	set menu {}
+	variable protected
+	variable menus
+	foreach m {Search Changes About Home Help} {
+	    lappend menu $menus($protected($m))
+	}
+	variable pageT
+	return [Http NoCache [Http Ok $r [subst $pageT]]]
+    }
+
+    proc /revision {r N {V -1} {A 0}} {
+	Debug.wikit {/page $args}
+
+	set ext [file extension $N]	;# file extension?
+	set N [file rootname $N]	;# it's a simple single page
+
+	if {![string is integer -strict $N]
+	    || ![string is integer -strict $V]
+	    || ![string is integer -strict $A]
+            || $N < 0
+	    || $N >= [mk::view size wdb.pages]
+	    || $V < 0
+	    || {$ext ni {"" .txt .tk .str}}
+	} {
+	    return [Http NotFound $r]
+	}
+
+	set nver [expr {1 + [mk::view size wdb.pages!$N.changes]}]
+	if {$V >= $nver} {
+	    return [Http NotFound $r]
+	}
+
+	Wikit::pagevars $N pname
+	set menu {}
+	if {$V >= 0} {
+	    switch -- $ext {
+		.txt {
+		    set C [get_page_with_version $N $V $A]
+		    return [Http NoCache [Http Ok $r $C text/plain]]
+		}
+		.tk {
+		    set Title "<h1>Version $V of [Ref $N]</h1>"
+		    set name "Version $V of $pname"
+		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
+		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
+		}
+		.str {
+		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
+		    return [Http NoCache [Http Ok $r $C text/plain]]
+		}
+		default {
+		    if { [catch {get_page_with_version $N $V $A} C] } {
+			set Title "<h1>Version $V of [Ref $N]</h1>"
+			set name "Version $V of $pname"
+			set C "Could not find version $V for [Ref $N]: [armour $C]"
+		    } else {
+			if {$A} {
+			    set Title "<h1>Annotated version $V of [Ref $N]</h1>"
+			    set name "Annotated version $V of $pname"
+			} else {
+			    set Title "<h1>Version $V of [Ref $N]</h1>"
+			    set name "Version $V of $pname"
+			}
+			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
+			if { $V > 0 } {
+			    lappend menu "Previous version" /_pagerev/$N?V=[expr {$V-1}]&A=$A
+			}
+			if { $V < ($nver-1) } {
+			    lappend menu "Next version" /_pagerev/$N?V=[expr {$V+1}]&A=$A
+			}
+			lappend menu Current /_pagerev/$N?V=[expr {$nver-1}]&A=$A
+		    }
+		}
+	    }
+	}
+
+	set menu {}
+	variable protected
+	variable menus
+	foreach m {Search Changes About Home Help} {
+	    lappend menu $menus($protected($m))
+	}
+
+	variable pageT
+	return [Http NoCache [Http Ok $r [subst $pageT]]]
+    }
+
+    # /history - revision history
+    proc /history {r N {S 0} {L 25}} {
+	Debug.wikit {/history $N $S $L}
 	if {![string is integer -strict $N]
 	    || ![string is integer -strict $S]
 	    || ![string is integer -strict $L]
@@ -343,7 +500,7 @@ namespace eval WikitWub {
 	    if {$pstart < 0} {
 		set pstart 0
 	    }
-	    append links "<a href=" \" /_rev/ $N ?S= $pstart &L= $L \" >
+	    append links "<a href=" \" /_revision/ $N ?S= $pstart &L= $L \" >
 	    append links "Previous " $L </a> " "
 	}
 	set nstart [expr {$S + $L}]
@@ -351,7 +508,7 @@ namespace eval WikitWub {
 	    if {$links ne {}} {
 		append links { - }
 	    }
-	    append links "<a href=" \" /_rev/ $N ?S= $nstart &L= $L \" >
+	    append links "<a href=" \" /_revision/ $N ?S= $nstart &L= $L \" >
 	    append links "Next " $L </a>
 	}
 	if {$links ne {}} {
@@ -362,29 +519,26 @@ namespace eval WikitWub {
 	} else {
 	    Wikit::pagevars $N name
 	    append result "<table border=1>\n<tr>"
-	    foreach column {{Revision} {Date} {Modified By}} {
-		append result <th> $column </th>
-	    }
-	    append result </tr>\n
+	    append result "<tr><th>[join {{Revision} {Date} {Modified By}} </th><th>]</th></tr>\n"
 	    foreach row $versions {
 		foreach {vn date who} $row break
-		append result <tr><td> {<a href=} \" /_getrev/ $N \
-		    ?V= $vn \" { rel="nofollow">} $vn </a></td><td> \
-		    [clock format $date \
-			 -format "%Y-%m-%d %H:%M:%S UTC" \
-			 -gmt true] \
-		    </td><td> $who </td></tr> \n
+		append result <tr><td>
+		append result [<a> [list href /_getrev/$N?V=$vn rel nofollow] $vn]
+		append result </td><td>
+		append result [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
+		append result </td><td> $who </td></tr> \n
 	    }
 	    append result </table> \n
 	}
 	append result <p> $links </p> \n
+
 	variable protected
 	variable menus
 	set menu {}
 	foreach m {Search Changes About Home} {
 	    lappend menu $menus($protected($m))
 	}
-	append result {<p id="footer"} [join $menu { - }] </p>
+	append result [<p> {id footer} [join $menu { - }]]
 	return [Http NoCache [Http Ok $r $result]]
     }
 
@@ -624,7 +778,7 @@ namespace eval WikitWub {
 
     # /reload - direct url to reload numbered pages from fs
     proc /reload {r} {
-	foreach {}
+	foreach {} {}
     }
 
     # called to generate an edit page
@@ -947,7 +1101,7 @@ namespace eval WikitWub {
 	if {![info exists protected($N)]} {
 	    if {!$::roflag} {
 		lappend menu [Ref /_edit/$N Edit]
-		lappend menu [Ref /_rev/$N Revisions]
+		lappend menu [Ref /_revision/$N Revisions]
 	    }
 	}
 
@@ -1165,7 +1319,9 @@ proc incoming {req} {
 	    /_motd -
 	    /_edit/* -
 	    /_save/* -
-	    /_rev/* -
+	    /_history/* -
+	    /_revision/* -
+	    /_diff/* -
 	    /_ref/* -
 	    /_search/* -
 	    /_search -
