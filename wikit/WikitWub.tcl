@@ -514,9 +514,9 @@ namespace eval WikitWub {
 	    append result <pre> $versions </pre>
 	} else {
 	    Wikit::pagevars $N name
-	    append result "<table class='history'>\n<tr>"
+	    append result "<table border='1' class='history'>\n<tr>"
 	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Compare with} 2 Annotated 1} {
-		append result {<th colspan=} $span> $column </th>
+		append result [<th> colspan $span $column]
 	    }
 	    append result </tr>\n
 	    foreach row $versions {
