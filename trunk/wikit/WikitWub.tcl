@@ -1037,7 +1037,7 @@ namespace eval WikitWub {
 	    4 {
 		# Recent Changes page
 		variable motd
-		set C [::Wikit::TextToStream "${motd}[::Wikit::RecentChanges wdb]"]
+		set C [::Wikit::TextToStream "${motd}\n\n[::Wikit::RecentChanges wdb]"]
 		lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U T
 
 		set name "Recent Changes"
