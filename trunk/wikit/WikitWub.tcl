@@ -527,19 +527,19 @@ namespace eval WikitWub {
 		append result <tr>
 		append result [<td> [<a> href /_revision/$N?V=$vn rel nofollow $vn]]
 		append result [<td> [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]]
-		append result [<td> $who] </tr> \n
+		append result [<td> $who]
 
 		if { $prev >= 0 } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev rel nofollow "Previous ($prev)"]]
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev "$prev"]]
 		} else {
 		    append result <td></td>
 		}
 		if { $next < $nver } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$curr rel nofollow "Current ($curr)"]]
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$next "$next"]]
 		} else {
 		    append result <td></td>
 		}
-		append result [<td> [<a> href /_revision/$N?V=$vn&A=1 rel nofollow $vn]]
+		append result [<td> [<a> href /_revision/$N?V=$vn&A=1 $vn]]
 		append result </tr> \n
 	    }
 	    append result </table> \n
