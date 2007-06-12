@@ -400,7 +400,7 @@ namespace eval WikitWub {
 	    lappend menu $menus($protected($m))
 	}
 	variable pageT
-	return [Http NoCache [Http Ok $r [subst $pageT]]]
+	return [Http NoCache [Http Ok $r [subst $pageT] x-text/system]]
     }
 
     proc /revision {r N {V -1} {A 0}} {
@@ -458,18 +458,17 @@ namespace eval WikitWub {
 			}
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
 			if { $V > 0 } {
-			    lappend menu "Previous version" /_revision/$N?V=[expr {$V-1}]&A=$A
+			    lappend menu "Previous version" $N?V=[expr {$V-1}]&A=$A
 			}
 			if { $V < ($nver-1) } {
-			    lappend menu "Next version" /_revision/$N?V=[expr {$V+1}]&A=$A
+			    lappend menu "Next version" $N?V=[expr {$V+1}]&A=$A
 			}
-			lappend menu Current /_revision/$N?V=[expr {$nver-1}]&A=$A
+			lappend menu Current $N?V=[expr {$nver-1}]&A=$A
 		    }
 		}
 	    }
 	}
 
-	set menu {}
 	variable protected
 	variable menus
 	foreach m {Search Changes About Home Help} {
@@ -477,7 +476,7 @@ namespace eval WikitWub {
 	}
 
 	variable pageT
-	return [Http NoCache [Http Ok $r [subst $pageT]]]
+	return [Http NoCache [Http Ok $r [subst $pageT] x-text/system]]
     }
 
     # /history - revision history
