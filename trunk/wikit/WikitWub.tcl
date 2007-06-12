@@ -474,7 +474,7 @@ namespace eval WikitWub {
     proc /save {r N C O save} {
 	variable readonly; variable roT
 	if {$readonly ne ""} {
-	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]
+	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]]
 	}
 
 	if {![string is integer -strict $N]} {
@@ -565,7 +565,7 @@ namespace eval WikitWub {
     proc /edit {r N args} {
 	variable readonly; variable roT
 	if {$readonly ne ""} {
-	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]
+	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]]
 	}
 
 	if {![string is integer -strict $N]} {
