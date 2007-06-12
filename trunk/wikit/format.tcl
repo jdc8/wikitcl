@@ -116,6 +116,7 @@ namespace eval Wikit::Format {
     foreach line [split $text \n] {
       # Per line, classify the it and extract the main textual information.
       foreach {tag depth txt aux} [linetype $line] break ; # lassign
+      set otag $tag
       if {$mode_fixed && $tag ne "FIXED" && $tag ne "CODE" \
             && $tag ne "EVAL"} {
         # if already in fixed mode, then line must be fixed
@@ -150,7 +151,7 @@ namespace eval Wikit::Format {
       ## there is any.
       #
       switch -exact -- $tag {
-        HR - UL - OL - DL - PRE - TBL - HD2 - HD3 - HD4 {
+        HR - UL - OL - DL - PRE - TBL - HD2 - HD3 - HD4 - BLAME_START - BLAME_END {
           if {$paragraph != {}} {
             if {$mode_fixed} {
               lappend irep FI {}
@@ -267,7 +268,35 @@ namespace eval Wikit::Format {
           set paragraph {}
         }
         FIXED_CONTENT {
-          lappend paragraph $txt
+          if { $otag eq "BLAME_START" } {
+            if {$paragraph ne {}} {
+              set paragraph [join $paragraph \n]
+              lappend irep FI {}
+              if {$mode_code} {
+                lappend irep {} $paragraph
+              } else {
+                render $paragraph
+              }
+              lappend irep FE {}
+            }
+            set paragraph {}
+            lappend irep BLS [string range $line 6 end]
+          } elseif { $otag eq "BLAME_END" } { 
+            if {$paragraph ne {}} {
+              set paragraph [join $paragraph \n]
+              lappend irep FI {}
+              if {$mode_code} {
+                lappend irep {} $paragraph
+              } else {
+                render $paragraph
+              }
+              lappend irep FE {}
+            }
+            set paragraph {}
+            lappend irep BLE 0
+          } else {
+            lappend paragraph $txt
+          }
         }
         OPTION {
           if {$mode_option} {
@@ -292,21 +321,45 @@ namespace eval Wikit::Format {
           }
         }
         OPTION_CONTENT {
-          # the fixed part should be followed by one or more tabs
-          # - if not then fall back to using the first double-space
-          #   then the first space
-          if {[regexp {^\s*(.+?)\t\s*(.*)$} $txt - opt rest]
-              || [regexp {^\s*(.+?)\s{2,}(.*)$} $txt - opt rest]
-              || [regexp {^\s*(.+?)\s+(.*)$} $txt - opt rest]
-            } {
-            set opt [string trim $opt]
-            regsub -all \t $rest \s rest
-            lappend irep F 0
-            set optlen [max $optlen [render $opt]]
-            lappend irep V \t
-            render $rest V
-          } elseif {$txt eq ""} {
-            lappend irep F 0
+          if { $otag eq "BLAME_START" || $otag eq "BLAME_END"} {
+            lappend irep L "$optnum $optlen"
+            set mode_option 0
+            set optlen 0
+            if { $otag eq "BLAME_START" } { 
+              lappend irep BLS [string range $line 6 end]
+            } else {
+              lappend irep BLE 0
+            }
+            # start new option list
+            if {$empty_std} {
+              lappend irep C 0 {} {}
+              set empty_std 0
+            }
+            if {$paragraph ne ""} {
+              lappend irep T 0
+              render $paragraph
+              set paragraph ""
+            }
+            set mode_option 1
+            set optlen 0
+            lappend irep L [incr optnum]
+          } else {
+            # the fixed part should be followed by one or more tabs
+            # - if not then fall back to using the first double-space
+            #   then the first space
+            if {[regexp {^\s*(.+?)\t\s*(.*)$} $txt - opt rest]
+                || [regexp {^\s*(.+?)\s{2,}(.*)$} $txt - opt rest]
+                || [regexp {^\s*(.+?)\s+(.*)$} $txt - opt rest]
+              } {
+              set opt [string trim $opt]
+              regsub -all \t $rest \s rest
+              lappend irep F 0
+              set optlen [max $optlen [render $opt]]
+              lappend irep V \t
+              render $rest V
+            } elseif {$txt eq ""} {
+              lappend irep F 0
+            }
           }
         }
         EVAL {
@@ -381,6 +434,12 @@ namespace eval Wikit::Format {
             lappend irep TD 0 ; render $te ; lappend irep TDE 0
           }
         }
+        BLAME_START {
+          lappend irep BLS $txt
+        }
+        BLAME_END {
+          lappend irep BLE 0
+        }
         default {
           error "Unknown linetype $tag"
         }
@@ -436,6 +495,8 @@ namespace eval Wikit::Format {
       CODE   {^(======)$}
       OPTION {^(\+\+\+)$}
       #EVAL {^(\+eval)(\s?)(.+)$}
+      BLAME_START {^(>>>>>>)(\s?)(.+)$}
+      BLAME_END   {^(<<<<<<)$}
     } {
       # Compat: Remove restriction to multiples of 3 spaces.
       if {[regexp $re $line - pfx aux txt]} {
@@ -1020,7 +1081,7 @@ namespace eval Wikit::Format {
   vs T HD4 --- 2 ; vs Q HD4 --- 2 ; vs U HD4 --- 2 ; vs O HD4 --- 2 ; vs I HD4 --- 2
   vs D HD4 --- 2 ; vs H HD4 --- 3 ; vs C HD4 --- 2 ; vs X HD4 --- 0 ; vs Y HD4 --- 0
 
-  rename vs {}
+  catch {rename vs {}}
 
   # =========================================================================
   # =========================================================================
@@ -1121,6 +1182,22 @@ namespace eval Wikit::Format {
         HDE {
           lappend tocpos [expr {[string length $result]-1}]
         }
+        BLS {
+          append result $html_frag($state$mode)
+          foreach {page version who when} [split $text ";"] break
+          append result "\n<div class='annotated'>\n"
+          append result "  <span class='versioninfo'>\n"
+          append result "    <span class='versionnum'><a href='/_rev/$page?V=$version&A=1'>$version</a></span>\n"
+          append result "    <span class='versionwho'>$who</span><br>\n"
+          append result "    <span class='versiondate'>$when</span>\n"
+          append result "  </span>\n"
+          set state $mode 
+        }
+        BLE {
+          append result $html_frag($state$mode)
+          append result "\n</div>\n"
+          set state $mode 
+        }
         TR - TD - TDE - T - Q - I - D - U - O - H - FI - FE - L - F {
           append result $html_frag($state$mode)
           set state $mode
@@ -1210,7 +1287,8 @@ namespace eval Wikit::Format {
   vs HD2 T              </h2><p> ;vs HD2 Q              </h2><pre> ;vs HD2 U              </h2><ul><li> ;vs HD2 O              </h2><ol><li>
   vs HD3 T              </h3><p> ;vs HD3 Q              </h3><pre> ;vs HD3 U              </h3><ul><li> ;vs HD3 O              </h3><ol><li>
   vs HD4 T              </h4><p> ;vs HD4 Q              </h4><pre> ;vs HD4 U              </h4><ul><li> ;vs HD4 O              </h4><ol><li>
-
+  vs BLS T                 \n<p> ;vs BLS Q                 \n<pre> ;vs BLS U                 \n<ul><li> ;vs BLS O                 \n<ol><li>
+  vs BLE T                 \n<p> ;vs BLE Q                 \n<pre> ;vs BLE U                 \n<ul><li> ;vs BLE O                 \n<ol><li>
 
   vs T   I               </p><dl><dt> ;vs T   D               </p><dl><dd> ;vs T   H               "</p><hr>" ;vs T   _               </p>
   vs Q   I             </pre><dl><dt> ;vs Q   D             </pre><dl><dd> ;vs Q   H             "</pre><hr>" ;vs Q   _             </pre>
@@ -1226,6 +1304,8 @@ namespace eval Wikit::Format {
   vs HD2 I              </h2><dl><dt> ;vs HD2 D              </h2><dl><dd> ;vs HD2 H              "</h2><hr>" ;vs HD2 _              </h2>
   vs HD3 I              </h3><dl><dt> ;vs HD3 D              </h3><dl><dd> ;vs HD3 H              "</h3><hr>" ;vs HD3 _              </h3>
   vs HD4 I              </h4><dl><dt> ;vs HD4 D              </h4><dl><dd> ;vs HD4 H              "</h4><hr>" ;vs HD4 _              </h4>
+  vs BLS I                 \n<dl><dt> ;vs BLS D                 \n<dl><dd> ;vs BLS H                   \n<hr> ;vs BLS _                 \n
+  vs BLE I                 \n<dl><dt> ;vs BLE D                 \n<dl><dd> ;vs BLE H                   \n<hr> ;vs BLE _                 \n
 
   vs T   HD2               </p><h2 ;vs T   HD3               </p><h3 ;vs T   HD4               </p><h4
   vs Q   HD2             </pre><h2 ;vs Q   HD3             </pre><h3 ;vs Q   HD4             </pre><h4
@@ -1241,6 +1321,25 @@ namespace eval Wikit::Format {
   vs HD2 HD2              </h2><h2 ;vs HD2 HD3              </h2><h3 ;vs HD2 HD4              </h2><h4
   vs HD3 HD2              </h3><h2 ;vs HD3 HD3              </h3><h3 ;vs HD3 HD4              </h3><h4
   vs HD4 HD2              </h4><h2 ;vs HD4 HD3              </h4><h3 ;vs HD4 HD4              </h4><h4
+  vs BLS HD2                 \n<h2 ;vs BLS HD3                 \n<h3 ;vs BLS HD4                 \n<h4
+  vs BLE HD2                 \n<h2 ;vs BLE HD3                 \n<h3 ;vs BLE HD4                 \n<h4
+
+  vs T   BLS               </p>\n ;vs T   BLE               </p>\n
+  vs Q   BLS             </pre>\n ;vs Q   BLE             </pre>\n
+  vs U   BLS              </ul>\n ;vs U   BLE              </ul>\n
+  vs O   BLS              </ol>\n ;vs O   BLE              </ol>\n
+  vs I   BLS              </dl>\n ;vs I   BLE              </dl>\n
+  vs D   BLS              </dl>\n ;vs D   BLE              </dl>\n
+  vs H   BLS                   \n ;vs H   BLE                   \n
+  vs TDE BLS      </tr></table>\n ;vs TDE BLE      </tr></table>\n
+  vs FE  BLS             </pre>\n ;vs FE  BLE             </pre>\n
+  vs FI  BLS             </pre>\n ;vs FI  BLE             </pre>\n
+  vs L   BLS      </tr></table>\n ;vs L   BLE           </table>\n
+  vs HD2 BLS              </h2>\n ;vs HD2 BLE              </h2>\n
+  vs HD3 BLS              </h3>\n ;vs HD3 BLE              </h3>\n
+  vs HD4 BLS              </h4>\n ;vs HD4 BLE              </h4>\n
+  vs BLS BLS                   \n ;vs BLS BLE                   \n
+  vs BLE BLS                   \n ;vs BLE BLE                   \n
 
   vs T   L   "</p><p><table class=wikit_options><tr>" ;vs T   TR   "</p><p><table class=wikit_table><tr>" ;
   vs Q   L "</pre><p><table class=wikit_options><tr>" ;vs Q   TR "</pre><p><table class=wikit_table><tr>" ;
@@ -1256,6 +1355,8 @@ namespace eval Wikit::Format {
   vs HD2 L  "</h2><p><table class=wikit_options><tr>" ;vs HD2 TR  "</h2><p><table class=wikit_table><tr>" ;
   vs HD3 L  "</h3><p><table class=wikit_options><tr>" ;vs HD3 TR  "</h3><p><table class=wikit_table><tr>" ;
   vs HD4 L  "</h4><p><table class=wikit_options><tr>" ;vs HD4 TR  "</h4><p><table class=wikit_table><tr>" ;
+  vs BLS L     "\n<p><table class=wikit_options><tr>" ;vs BLS TR     "\n<p><table class=wikit_table><tr>" ;
+  vs BLE L     "\n<p><table class=wikit_options><tr>" ;vs BLE TR     "\n<p><table class=wikit_table><tr>" ;
 
   vs T   FI               </p><p><pre> ;vs T   FE               </p> ;
   vs Q   FI             </pre><p><pre> ;vs Q   FE             </pre> ;
@@ -1271,6 +1372,8 @@ namespace eval Wikit::Format {
   vs HD2 FI              </h2><p><pre> ;vs HD2 FE              </h2> ;
   vs HD3 FI              </h3><p><pre> ;vs HD3 FE              </h3> ;
   vs HD4 FI              </h4><p><pre> ;vs HD4 FE              </h4> ;
+  vs BLS FI                 \n<p><pre> ;vs BLS FE                 \n ;
+  vs BLE FI                 \n<p><pre> ;vs BLE FE                 \n ;
 
   # Only TR and TDE can go to TD
   # TDE -> TDE is never required.
@@ -1278,9 +1381,6 @@ namespace eval Wikit::Format {
   vs TDE TD  <td>
   vs TD  TDE </td>
 
-  # Only L and V can go to F
-  # Only V and F can go to V
-  # Only F and V can go to L
   vs L F <td><pre>
   vs V F </td></tr><tr><td><pre>
   vs F V </pre></td><td>
@@ -1422,4 +1522,3 @@ namespace eval Wikit::Format {
 ### tcl-continued-indent-level:2 ***
 ### indent-tabs-mode:nil ***
 ### End: ***
-

@@ -438,6 +438,7 @@ namespace eval WikitWub {
 		    set name "Version $V of $pname"
 		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
 		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
+		    append result "<p>$C"
 		}
 		.str {
 		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
@@ -445,9 +446,7 @@ namespace eval WikitWub {
 		}
 		default {
 		    if { [catch {get_page_with_version $N $V $A} C] } {
-			set Title "<h1>Version $V of [Ref $N]</h1>"
-			set name "Version $V of $pname"
-			set C "Could not find version $V for [Ref $N]: [armour $C]"
+			return [Http NotFound $r]
 		    } else {
 			if {$A} {
 			    set Title "<h1>Annotated version $V of [Ref $N]</h1>"
@@ -515,15 +514,33 @@ namespace eval WikitWub {
 	    append result <pre> $versions </pre>
 	} else {
 	    Wikit::pagevars $N name
-	    append result "<table border=1>\n<tr>"
-	    append result "<tr><th>[join {{Revision} {Date} {Modified By}} </th><th>]</th></tr>\n"
+	    append result "<table class='history'>\n<tr>"
+	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Compare with} 2 Annotated 1} {
+		append result {<th colspan=} $span> $column </th>
+	    }
+	    append result </tr>\n
 	    foreach row $versions {
 		lassign $row vn date who
-		append result <tr><td>
-		append result [<a> href /_revision/$N?V=$vn rel nofollow $vn]
-		append result </td><td>
-		append result [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
-		append result </td><td> $who </td></tr> \n
+		set prev [expr {$vn-1}]
+		set next [expr {$vn+1}]
+		set curr [expr {$nver-1}]
+		append result <tr>
+		append result [<td> [<a> href /_revision/$N?V=$vn rel nofollow $vn]]
+		append result [<td> [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]]
+		append result [<td> $who] </tr> \n
+
+		if { $prev >= 0 } {
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev rel nofollow "Previous ($prev)"]]
+		} else {
+		    append result <td></td>
+		}
+		if { $next < $nver } {
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$curr rel nofollow "Current ($curr)"]]
+		} else {
+		    append result <td></td>
+		}
+		append result [<td> [<a> href /_revision/$N?V=$vn&A=1 rel nofollow $vn]]
+		append result </tr> \n
 	    }
 	    append result </table> \n
 	}
