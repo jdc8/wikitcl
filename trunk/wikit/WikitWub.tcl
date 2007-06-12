@@ -458,12 +458,12 @@ namespace eval WikitWub {
 			}
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
 			if { $V > 0 } {
-			    lappend menu "Previous version" /_pagerev/$N?V=[expr {$V-1}]&A=$A
+			    lappend menu "Previous version" /_revision/$N?V=[expr {$V-1}]&A=$A
 			}
 			if { $V < ($nver-1) } {
-			    lappend menu "Next version" /_pagerev/$N?V=[expr {$V+1}]&A=$A
+			    lappend menu "Next version" /_revision/$N?V=[expr {$V+1}]&A=$A
 			}
-			lappend menu Current /_pagerev/$N?V=[expr {$nver-1}]&A=$A
+			lappend menu Current /_revision/$N?V=[expr {$nver-1}]&A=$A
 		    }
 		}
 	    }
@@ -500,16 +500,14 @@ namespace eval WikitWub {
 	    if {$pstart < 0} {
 		set pstart 0
 	    }
-	    append links "<a href=" \" /_revision/ $N ?S= $pstart &L= $L \" >
-	    append links "Previous " $L </a> " "
+	    append links [<a> [list href $N?S=$pstart&L=$L] "Previous $L"]
 	}
 	set nstart [expr {$S + $L}]
 	if {$nstart < $nver} {
 	    if {$links ne {}} {
 		append links { - }
 	    }
-	    append links "<a href=" \" /_revision/ $N ?S= $nstart &L= $L \" >
-	    append links "Next " $L </a>
+	    append links [<a> [list href $N?S=$nstart&L=$L] "Next $L"]
 	}
 	if {$links ne {}} {
 	    append result <p> $links </p> \n
@@ -521,9 +519,9 @@ namespace eval WikitWub {
 	    append result "<table border=1>\n<tr>"
 	    append result "<tr><th>[join {{Revision} {Date} {Modified By}} </th><th>]</th></tr>\n"
 	    foreach row $versions {
-		foreach {vn date who} $row break
+		lassign $row vn date who
 		append result <tr><td>
-		append result [<a> [list href /_getrev/$N?V=$vn rel nofollow] $vn]
+		append result [<a> [list href /_revision/$N?V=$vn rel nofollow] $vn]
 		append result </td><td>
 		append result [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
 		append result </td><td> $who </td></tr> \n
@@ -1101,7 +1099,7 @@ namespace eval WikitWub {
 	if {![info exists protected($N)]} {
 	    if {!$::roflag} {
 		lappend menu [Ref /_edit/$N Edit]
-		lappend menu [Ref /_revision/$N Revisions]
+		lappend menu [Ref /_history/$N Revisions]
 	    }
 	}
 
