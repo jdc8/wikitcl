@@ -906,7 +906,7 @@ namespace eval WikitWub {
 
 	variable readonly
 	if {$readonly ne ""} {
-	    set ro "<it>($readonly)</it>"
+	    set ro "<it>(Read Only Mode: $readonly)</it>"
 	} else {
 	    set ro ""
 	}
