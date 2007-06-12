@@ -458,12 +458,12 @@ namespace eval WikitWub {
 			}
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
 			if { $V > 0 } {
-			    lappend menu [Ref ./$N?V=[expr {$V-1}]&A=$A "Previous version"]
+			    lappend menu [Ref /_revision/$N?V=[expr {$V-1}]&A=$A "Previous version"]
 			}
 			if { $V < ($nver-1) } {
-			    lappend menu [Ref ./$N?V=[expr {$V+1}]&A=$A "Next version"]
+			    lappend menu [Ref /_revision/$N?V=[expr {$V+1}]&A=$A "Next version"]
 			}
-			lappend menu [Ref ./$N?V=[expr {$nver-1}]&A=[expr {!$A}] Current]
+			lappend menu [Ref /_revision/$N?V=[expr {$nver-1}]&A=[expr {!$A}] Current]
 		    }
 		}
 	    }
