@@ -97,6 +97,7 @@ namespace eval WikitWub {
 
 	[div container {
 	    [div header {<h1 class='title'>$Title</h1>}]
+	    $ro
 	    [div {wrapper content} {<p>$C</p>}]
 	    <hr noshade />
 	    [div footer "<p>[join $menu { - }]</p>
@@ -903,6 +904,12 @@ namespace eval WikitWub {
 	    }
 	}
 
+	variable readonly
+	if {$readonly ne ""} {
+	    set ro "<it>($readonly)</it>"
+	} else {
+	    set ro ""
+	}
 	variable pageT
 	set page [string trimleft [subst $pageT] \n]
 	if {$cacheit} {
