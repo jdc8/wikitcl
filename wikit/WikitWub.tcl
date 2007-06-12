@@ -888,6 +888,8 @@ namespace eval WikitWub {
 
 	if {$date == 0} {
 	    set id _edit/$id ;# enter edit mode for missing links
+	} else {
+	    set id /$id	;# add a leading / which format.tcl will strip
 	}
 
 	return [list /$id $name $date]
