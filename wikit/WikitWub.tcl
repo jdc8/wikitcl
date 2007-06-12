@@ -358,7 +358,7 @@ namespace eval WikitWub {
 	    || $N >= [mk::view size wdb.pages]
 	    || $V < 0
 	    || $D < 0
-	    || {$ext ni {"" .txt .tk .str}}
+	    || $ext ni {"" .txt .tk .str}
 	} {
 	    return [Http NotFound $r]
 	}
@@ -415,7 +415,7 @@ namespace eval WikitWub {
             || $N < 0
 	    || $N >= [mk::view size wdb.pages]
 	    || $V < 0
-	    || {$ext ni {"" .txt .tk .str}}
+	    || $ext ni {"" .txt .tk .str}
 	} {
 	    return [Http NotFound $r]
 	}
