@@ -1311,7 +1311,7 @@ catch {
 
 # disconnected - courtesy indication
 # we've been disconnected
-proc disconnected {sock} {
+proc disconnected {args} {
     # we're pretty well stateless
 }
 
