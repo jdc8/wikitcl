@@ -354,7 +354,7 @@ namespace eval WikitWub {
 	    }
 
 	    append result [<a> href /$id $name]
-	    append result " . . . $who "
+	    append result "   . . . $who  "
 	    append result [<a> href /_diff/$id $delta]
 
 	    lappend results [<li> $result]
