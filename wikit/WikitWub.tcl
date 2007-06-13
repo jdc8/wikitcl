@@ -1070,13 +1070,26 @@ namespace eval WikitWub {
 	return [list $result $rdate]
     }
 
+    variable trailers {@ _edit ! _ref - _diff + _history}
     proc do {r term} {
+	# decompose name
+	set N [file rootname $term]	;# it's a simple single page
+	set ext [file extension $term]	;# file extension?
+
+	# strip fancy terminator shortcuts off end
+	set fancy [string index $N end]
+	if {$fancy in {@ ! - +}} {
+	    set term [string range $N 1 end-1]
+	} else {
+	    set fancy ""
+	}
+
 	# handle searches
-	if {![string is integer -strict [file rootname $term]]} {
+	if {![string is integer -strict $N]} {
 	    set N [locate $term]
 	    if {$N == "2"} {
 		# locate has given up - can't find a page - go to search
-		return [Http Redirect $r "http://[dict get $r host]/2" "" "" S [Query decode $term]]
+		return [Http Redirect $r "http://[dict get $r host]/2" "" "" S [Query decode $term$fancy]]
 	    } elseif {$N ne $term} {
 		# we really should redirect
 		return [Http Redirect $r "http://[dict get $r host]/$N"]
@@ -1084,8 +1097,13 @@ namespace eval WikitWub {
 	}
 
 	# term is a simple integer - a page number
-	set N [file rootname $term]	;# it's a simple single page
-	set ext [file extension $term]	;# file extension?
+	if {$fancy ne ""} {
+	    variable trailers
+	    # we need to redirect to the appropriate spot
+	    set url [dict get $trailers $fancy]/$N
+	    return [Http Redirect $r "http://[dict get $r host]/$url"
+	}
+
 	set date [clock seconds]	;# default date is now
 	set name ""	;# no default page name
 	set who ""	;# no default editor
