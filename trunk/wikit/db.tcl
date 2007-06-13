@@ -445,7 +445,7 @@ namespace eval Wikit {
       set who $lastwho
     }
     set result {}
-    foreach line $lines v $versions {
+    foreach line $lines v $versions date $dates who $whos {
       lappend result [list $line $v $date $who]
     }
     return $result
