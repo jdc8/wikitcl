@@ -318,6 +318,55 @@ namespace eval WikitWub {
 	return [Http NoCache [Http Ok $r $result]]
     }
 
+    # Special page: Recent Changes.
+    proc RecentChanges {} {
+	variable delta
+	set count 0
+	set result ""
+	set results {}
+	set lastDay 0
+	set threshold [expr {[clock seconds] - 7 * 86400}]
+
+	foreach id [mk::select wdb.pages -rsort date] {
+	    lassign [mk::get wdb.pages!$id date name who] date name who
+	    
+	    # these are fake pages, don't list them
+	    if {$id == 2 || $id == 4} continue
+
+	    # only report last change to a page on each day
+	    set day [expr {$date/86400}]
+
+	    #insert a header for each new date
+	    incr count
+	    if {$day != $lastDay} {
+		# only cut off on day changes and if over 7 days reported
+		if {$count > 100 && $date < $threshold} {
+		    break
+		}
+		
+		set lastDay $day
+		if {$lastDay} {
+		    lappend results </ul>
+		}
+		lappend results [<p> [<b> [clock format $date -gmt 1 -format {%B %e, %Y}]]]
+		lappend results <ul>
+	    }
+
+	    append result [<a> href /$id [list $name]] " "
+	    append result [<a> href /_diff/$id $delta]
+	    append result ". . . $who"
+
+	    lappend results [<li> $result]
+	}
+	lappend result </ul>
+
+	if {$count > 100 && $date < $threshold} {
+	    lappend results [<p> "Older entries omitted..."]
+	}
+
+	return [join $results \n]
+    }
+
     proc get_page_with_version {N V A} {
 	if {$A} {
 	    set aC [::Wikit::AnnotatePageVersion $N $V]
@@ -712,7 +761,7 @@ namespace eval WikitWub {
 		# do a glob search over names,
 		# where AbCdEf -> *[Aa]b*[Cc]d*[Ee]f*
 		# skip this if the search has brackets (WHY?)
-		if {[string first "\[" $page] < 0} {
+		if {[string first {[} $page] < 0} {
 		    regsub -all {[A-Z]} $page {*\\[&[string tolower &]\]} temp
 		    set temp "[subst -novariable $temp]*"
 		    set N [mk::select wdb.pages -glob name $temp -min date 1]
@@ -839,7 +888,7 @@ namespace eval WikitWub {
     }
 
     # called to generate an edit page
-    proc /edit {r N args} {
+	proc /edit {r N args} {
 	variable readonly; variable roT
 	if {$readonly ne ""} {
 	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]]
@@ -901,7 +950,7 @@ namespace eval WikitWub {
 	}
     }
 
-    # called to generate a page with references
+	# called to generate a page with references
     proc /ref {r N} {
 	#set N [dict get $r -suffix]
 	Debug.wikit {/ref $N}
@@ -1081,9 +1130,7 @@ namespace eval WikitWub {
 	    4 {
 		# Recent Changes page
 		variable motd
-		set C [::Wikit::TextToStream "${motd}\n\n[::Wikit::RecentChanges wdb]"]
-		lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U T
-
+		set C "${motd}[RecentChanges]"
 		set name "Recent Changes"
 	    }
 
