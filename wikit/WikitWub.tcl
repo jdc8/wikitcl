@@ -1079,7 +1079,7 @@ namespace eval WikitWub {
 	# strip fancy terminator shortcuts off end
 	set fancy [string index $N end]
 	if {$fancy in {@ ! - +}} {
-	    set term [string range $N 1 end-1]
+	    set N [string range $N 0 end-1]
 	} else {
 	    set fancy ""
 	}
