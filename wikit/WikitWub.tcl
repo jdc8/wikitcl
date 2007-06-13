@@ -329,7 +329,7 @@ namespace eval WikitWub {
 		    if { $prevVersion != -1 } {
 			append C "\n<<<<<<"
 		    }
-		    append C "\n>>>>>>$N;$lineVersion;$who;" [clock format $time -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
+		    append C "\n>>>>>>a;$N;$lineVersion;$who;" [clock format $time -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
 		    set prevVersion $lineVersion
 		}
 		append C "\n$line"
@@ -369,26 +369,58 @@ namespace eval WikitWub {
 	}
 
 	Wikit::pagevars $N pname
+
+	set t1 [split [get_page_with_version $N $V 0] "\n"]
+	set t2 [split [get_page_with_version $N $D 0] "\n"]
+	set p1 0
+	set p2 0
+	foreach {l1 l2} [::struct::list::LlongestCommonSubsequence $t1 $t2] {
+	    foreach i1 $l1 i2 $l2 {
+		while { $p1 < $i1 } { 
+		    append C ">>>>>>n;$N;$V;;\n[lindex $t1 $p1]\n<<<<<<\n"
+		    incr p1
+		}
+		while { $p2 < $i2 } { 
+		    append C ">>>>>>o;$N;$D;;\n[lindex $t2 $p2]\n<<<<<<\n"
+		    incr p2
+		}
+		append C "[lindex $t1 $i1]\n"
+		incr p1
+		incr p2
+	    }
+	}
+	while { $p1 < [llength $t1] } { 
+	    append C ">>>>>>n;$N;$V;;\n[lindex $t1 $p1]\n<<<<<<\n"
+	    incr p1
+	}
+	while { $p2 < [llength $t2] } { 
+	    append C ">>>>>>o;$N;$V;;\n[lindex $t2 $p2]\n<<<<<<\n"
+	    incr p2
+	}
+
 	set menu {}
 	if {$V >= 0} {
 	    switch -- $ext {
 		.txt {
-		    set C "Difference for page $N between version $V and $D not available yet."
 		    return [Http NoCache [Http Ok $r $C text/plain]]
 		}
 		.tk {
 		    set Title "<h1>Difference between version $V and $D for [Ref $N]</h1>"
 		    set name "Difference between version $V and $D for $pname"
-		    set C "Difference for page $N between version $V and $D not available yet."
+		    set C [::Wikit::TextToStream $C]
+		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
+		    append result "<p>$C"
 		}
 		.str {
-		    set C "Difference for $N between version $V and $D not available yet."
+		    set C [::Wikit::TextToStream $C]
 		    return [Http NoCache [Http Ok $r $C text/plain]]
 		}
 		default {
 		    set Title "<h1>Difference between version $V and $D for [Ref $N]</h1>"
 		    set name "Difference between version $V and $D for $pname"
-		    set C "Difference for page $N between version $V and $D not available yet."
+		    lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
+		    set C "<span class='newwikiline'>Lines added in version $V are highlighted like this</span>, and <span class='oldwikiline'>Lines deleted in version $D are highlighted like this.</span><hr><p>$C"
+
 		}
 	    }
 	}
@@ -515,7 +547,7 @@ namespace eval WikitWub {
 	} else {
 	    Wikit::pagevars $N name
 	    append result "<table class='history'>\n<tr>"
-	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Compare with} 2 Annotated 1 WikiText 1} {
+	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Compare with} 3 Annotated 1 WikiText 1} {
 		append result [<th> colspan $span $column]
 	    }
 	    append result </tr>\n
@@ -536,6 +568,11 @@ namespace eval WikitWub {
 		}
 		if { $next < $nver } {
 		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$next "$next"]]
+		} else {
+		    append result <td></td>
+		}
+		if { $vn != $curr } {
+		    append result [<td> [<a> href /_diff/$N?V=$curr&D=$vn "Current"]]		
 		} else {
 		    append result <td></td>
 		}
