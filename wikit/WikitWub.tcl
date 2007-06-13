@@ -515,7 +515,7 @@ namespace eval WikitWub {
 	} else {
 	    Wikit::pagevars $N name
 	    append result "<table class='history'>\n<tr>"
-	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Compare with} 2 Annotated 1} {
+	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Compare with} 2 Annotated 1 WikiText 1} {
 		append result [<th> colspan $span $column]
 	    }
 	    append result </tr>\n
@@ -540,6 +540,7 @@ namespace eval WikitWub {
 		    append result <td></td>
 		}
 		append result [<td> [<a> href /_revision/$N?V=$vn&A=1 $vn]]
+		append result [<td> [<a> href /_revision/$N.txt?V=$vn $vn]]
 		append result </tr> \n
 	    }
 	    append result </table> \n
