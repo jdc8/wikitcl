@@ -323,12 +323,12 @@ namespace eval WikitWub {
     proc RecentChanges {} {
 	variable delta
 	set count 0
-	set result ""
 	set results {}
 	set lastDay 0
 	set threshold [expr {[clock seconds] - 7 * 86400}]
 
 	foreach id [mk::select wdb.pages -rsort date] {
+	    set result ""
 	    lassign [mk::get wdb.pages!$id date name who] date name who
 	    
 	    # these are fake pages, don't list them
