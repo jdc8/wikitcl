@@ -1111,6 +1111,7 @@ namespace eval Wikit::Format {
     set state H   ; # bogus hline as initial state.
     set vstate "" ; # Initial state of visual FSM
     set count 0
+    set bltype "a"
     variable html_frag
 
     foreach {mode text} $s {
@@ -1184,18 +1185,36 @@ namespace eval Wikit::Format {
         }
         BLS {
           append result $html_frag($state$mode)
-          foreach {page version who when} [split $text ";"] break
-          append result "\n<div class='annotated'>\n"
-          append result "  <span class='versioninfo'>\n"
-          append result "    <span class='versionnum'><a href='/_revision/$page?V=$version&A=1'>$version</a></span>\n"
-          append result "    <span class='versionwho'>$who</span><br>\n"
-          append result "    <span class='versiondate'>$when</span>\n"
-          append result "  </span>\n"
+          foreach {bltype page version who when} [split $text ";"] break
+          switch -exact -- $bltype {
+            a {
+              append result "\n<div class='annotated'>\n"
+              append result "  <span class='versioninfo'>\n"
+              append result "    <span class='versionnum'><a href='/_rev/$page?V=$version&A=1'>$version</a></span>\n"
+              append result "    <span class='versionwho'>$who</span><br>\n"
+              append result "    <span class='versiondate'>$when</span>\n"
+              append result "  </span>\n"
+            }
+            n {
+              append result "<div class='newwikiline'>"
+            }
+            o {
+              append result "<div class='oldwikiline'>"
+            }
+          }
           set state $mode 
         }
         BLE {
           append result $html_frag($state$mode)
-          append result "\n</div>\n"
+          switch -exact -- $bltype {
+            a {
+              append result "\n</div>\n"
+            }
+            n -
+            o {
+              append result "</div>"
+            }
+          }
           set state $mode 
         }
         TR - TD - TDE - T - Q - I - D - U - O - H - FI - FE - L - F {
@@ -1287,8 +1306,8 @@ namespace eval Wikit::Format {
   vs HD2 T              </h2><p> ;vs HD2 Q              </h2><pre> ;vs HD2 U              </h2><ul><li> ;vs HD2 O              </h2><ol><li>
   vs HD3 T              </h3><p> ;vs HD3 Q              </h3><pre> ;vs HD3 U              </h3><ul><li> ;vs HD3 O              </h3><ol><li>
   vs HD4 T              </h4><p> ;vs HD4 Q              </h4><pre> ;vs HD4 U              </h4><ul><li> ;vs HD4 O              </h4><ol><li>
-  vs BLS T                 \n<p> ;vs BLS Q                 \n<pre> ;vs BLS U                 \n<ul><li> ;vs BLS O                 \n<ol><li>
-  vs BLE T                 \n<p> ;vs BLE Q                 \n<pre> ;vs BLE U                 \n<ul><li> ;vs BLE O                 \n<ol><li>
+  vs BLS T                 <p>\n ;vs BLS Q                 \n<pre> ;vs BLS U                 \n<ul><li> ;vs BLS O                 \n<ol><li>
+  vs BLE T                 <p>\n ;vs BLE Q                 \n<pre> ;vs BLE U                 \n<ul><li> ;vs BLE O                 \n<ol><li>
 
   vs T   I               </p><dl><dt> ;vs T   D               </p><dl><dd> ;vs T   H               "</p><hr>" ;vs T   _               </p>
   vs Q   I             </pre><dl><dt> ;vs Q   D             </pre><dl><dd> ;vs Q   H             "</pre><hr>" ;vs Q   _             </pre>
@@ -1372,8 +1391,8 @@ namespace eval Wikit::Format {
   vs HD2 FI              </h2><p><pre> ;vs HD2 FE              </h2> ;
   vs HD3 FI              </h3><p><pre> ;vs HD3 FE              </h3> ;
   vs HD4 FI              </h4><p><pre> ;vs HD4 FE              </h4> ;
-  vs BLS FI                 \n<p><pre> ;vs BLS FE                 \n ;
-  vs BLE FI                 \n<p><pre> ;vs BLE FE                 \n ;
+  vs BLS FI                 \n<pre> ;vs BLS FE                 \n ;
+  vs BLE FI                 \n<pre> ;vs BLE FE                 \n ;
 
   # Only TR and TDE can go to TD
   # TDE -> TDE is never required.
