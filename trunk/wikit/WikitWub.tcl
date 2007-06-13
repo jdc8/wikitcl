@@ -354,7 +354,7 @@ namespace eval WikitWub {
 	    }
 
 	    append result [<a> href /$id $name]
-	    append result "&nbsp;&nbsp;&nbsp;. . . $who&nbsp;&nbsp;&nbsp;"
+	    append result "&nbsp;&nbsp;&nbsp;. . .&nbsp;&nbsp;&nbsp;$who&nbsp;&nbsp;&nbsp;"
 	    append result [<a> href /_diff/$id $delta]
 
 	    lappend results [<li> $result]
@@ -1101,7 +1101,7 @@ namespace eval WikitWub {
 	    variable trailers
 	    # we need to redirect to the appropriate spot
 	    set url [dict get $trailers $fancy]/$N
-	    return [Http Redirect $r "http://[dict get $r host]/$url"
+	    return [Http Redirect $r "http://[dict get $r host]/$url"]
 	}
 
 	set date [clock seconds]	;# default date is now
