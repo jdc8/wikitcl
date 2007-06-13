@@ -11,9 +11,11 @@ package require Wikit::Cache
 
 namespace eval Wikit {
   namespace export InfoProc
+  variable delta [subst \u0394]	;# sexy char for 'diff'
 
   # Special page: Recent Changes.
   proc RecentChanges {{db wdb}} {
+      variable delta
     set count 0
     set result ""
     set lastDay 0
@@ -41,7 +43,7 @@ namespace eval Wikit {
         append result "'''[clock format $date -gmt 1 -format {%B %e, %Y}]'''\n"
       }
 
-      append result "   * \[$name\] . . . $who\n"
+      append result "   * \[$name\]<a href='/_diff/$id'>$delta</a> . . . $who\n"
     }
 
     return $result

@@ -356,8 +356,6 @@ namespace eval WikitWub {
 	    || ![string is integer -strict $D]
             || $N < 0
 	    || $N >= [mk::view size wdb.pages]
-	    || $V < 0
-	    || $D < 0
 	    || $ext ni {"" .txt .tk .str}
 	} {
 	    return [Http NotFound $r]
@@ -366,6 +364,13 @@ namespace eval WikitWub {
 	set nver [expr {1 + [mk::view size wdb.pages!$N.changes]}]
 	if { $V >= $nver || $D >= $nver } {
 	    return [Http NotFound $r]
+	}
+
+	if {$V < 0} {
+	    set V [expr {$nver - 1}]	;# default
+	}
+	if {$D < 0} {
+	    set D [expr {$nver - 2}]	;# default
 	}
 
 	Wikit::pagevars $N pname
