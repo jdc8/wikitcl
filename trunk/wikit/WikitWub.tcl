@@ -433,6 +433,7 @@ namespace eval WikitWub {
 	set t2 [split [get_page_with_version $N $D 0] "\n"]
 	set p1 0
 	set p2 0
+	set C ""
 	foreach {l1 l2} [::struct::list::LlongestCommonSubsequence $t1 $t2] {
 	    foreach i1 $l1 i2 $l2 {
 		while { $p1 < $i1 } { 
@@ -1546,6 +1547,6 @@ Debug off cookies 10
 Debug off socket 10
 
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
-Debug.log {LOCAL: '$r' ($eo)}
+Debug.log {LOCAL: '$r' ($eo)} 6
 
 thread::wait
