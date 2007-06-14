@@ -100,8 +100,10 @@ namespace eval WikitWub {
 	    [expr {[info exists ro]?$ro:""}]
 	    [div {wrapper content} {<p>$C</p>}]
 	    <hr noshade />
-	    [div footer "<p>[join $menu { - }]</p>
-		<p>[searchF]</p>"]
+	    [div footer {
+		<p>[join $menu { - }]</p>
+		<p>[searchF]</p>
+	    }]
         }]
     }
 
@@ -109,18 +111,20 @@ namespace eval WikitWub {
     variable refs {title: References to $N
 
 	[div container {
-	    [div header "<h1>References to [Ref $N]</h1>"]
-	    [div {wrapper content} $C]
+	    [div header {<h1>References to [Ref $N]</h1>}]
+	    [div {wrapper content} {$C}]
 	    <hr noshade />
-	    [div footer "<p>[join $menu { - }]</p>
-		<p>[searchF]</p>"]
+	    [div footer {
+		<p>[join $menu { - }]</p>
+		<p>[searchF]</p>
+	    }]
 	}]
      }
 
     # page sent when editing a page
     variable edit {title: Editing $N
 
-	[div header "<h1>[Ref $N]</h1>"]
+	[div header {<h1>[Ref $N]</h1>}]
 	<form method='post' action='/_save/$N'>
 	<textarea rows='30' cols='72' name='C' style='width:100%'>$C</textarea>
 	<p />
