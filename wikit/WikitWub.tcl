@@ -833,7 +833,7 @@ namespace eval WikitWub {
 	    && ![info exists protected($N)]
 	} {
 	    # added 2002-06-13 - edit conflict detection
-	    if {$O != [list $date $who]} {
+	    if {$O ne [list $date $who]} {
 		variable conflict
 		return [Http NoCache [Http Ok $r [subst $conflict] x-text/system]]
 	    }
@@ -843,9 +843,8 @@ namespace eval WikitWub {
 
 	    # check the content for utf8 correctness
 	    # this metadata is set by Query parse/cconvert
-	    set metadata [Query metadata [dict get $r -Query] C]
-	    set point [Dict get? -bad]
-	    if {$point ne ""
+	    set point [Dict get? [Query metadata [dict get $r -Query] C] -bad]
+	    if {$point ne "" 
 		&& $point < [string length $C] - 1
 	    } {
 		if {$point >= 0} {
