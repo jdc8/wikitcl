@@ -358,8 +358,8 @@ namespace eval WikitWub {
 	    }
 
 	    append result [<a> href /$id $name]
-	    append result [<span> class dots "&nbsp;&nbsp;&nbsp;. . .&nbsp;&nbsp;&nbsp;"]
-	    append result [<span> class nick "$who&nbsp;&nbsp;&nbsp;"]
+	    append result [<span> class dots ". . ."]
+	    append result [<span> class nick $who]
 	    append result [<a> class delta href /_diff/$id $delta]
 	    
 	    lappend results [<li> $result]
