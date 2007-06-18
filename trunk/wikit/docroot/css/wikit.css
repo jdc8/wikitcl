@@ -237,7 +237,7 @@ span.dots {
  display: none;
 }
 a.delta {
- font-size: 90%;
+ font-size: 70%;
  color: gray;
- margin: 0 0 0 0.5em;
+ margin: 0 0 0 1em;
 }
