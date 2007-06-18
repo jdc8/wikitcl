@@ -835,6 +835,7 @@ namespace eval WikitWub {
 	} {
 	    # added 2002-06-13 - edit conflict detection
 	    if {$O ne [list $date $who]} {
+		Debug.error {Conflict on Edit: '$O' ne '[list $date $who]'}
 		variable conflict
 		return [Http NoCache [Http Ok $r [subst $conflict] x-text/system]]
 	    }
