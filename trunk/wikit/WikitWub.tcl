@@ -1523,6 +1523,8 @@ package require Wikit::Format
 #namespace import Wikit::Format::*
 package require Wikit::Db
 package require Wikit::Cache
+
+set Wikit::mutex $config(mkmutex)	;set mutex for wikit writes
 Wikit::BuildTitleCache
 
 set script [mk::get wdb.pages!9 page]
