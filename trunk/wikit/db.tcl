@@ -572,7 +572,7 @@ namespace eval Wikit {
           DoCommit $db
         }
       }
-    }] r eo} {
+    } r eo]} {
       Debug.error "SavePageDb: '$r' ($eo)"
     }
 
