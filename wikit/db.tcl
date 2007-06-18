@@ -516,7 +516,10 @@ namespace eval Wikit {
   proc SavePageDB {db id text newWho newName {newdate ""}} {
     set changed 0
 
-    variable mutex; ::thread::mutex lock $mutex	;# lock for update
+    variable mutex;
+    if {$mutex ne ""} {
+      ::thread::mutex lock $mutex	;# lock for update
+    }
     if {[catch {
       pagevarsDB $db $id name date page who
 
@@ -576,7 +579,9 @@ namespace eval Wikit {
       Debug.error "SavePageDb: '$r' ($eo)"
     }
 
-    ::thread::mutex unlock $mutex	;# unlock for db update
+    if {$mutex ne ""} {
+      ::thread::mutex unlock $mutex	;# unlock for db update
+    }
   }
 
   #----------------------------------------------------------------------------
