@@ -76,6 +76,7 @@ namespace eval Wikit {
   namespace export SavePage SavePageDB DoCommit DoSync FixPageRefs
 
   variable readonly -1	;# use the file permissions
+  variable mutex ""	;# mutex for locking at SavePageDB
 
   # Code for opening, closing, locking, searching, and modifying views
 
@@ -512,62 +513,67 @@ namespace eval Wikit {
   proc SavePageDB {db id text newWho newName {newdate ""}} {
     set changed 0
 
-    pagevarsDB $db $id name date page who
+    variable mutex; ::thread::mutex lock $mutex	;# lock for update
+    if {[catch {
+      pagevarsDB $db $id name date page who
 
-    if {$newName != $name} {
-      set changed 1
+      if {$newName != $name} {
+        set changed 1
 
-      # rewrite all pages referencing $id changing old name to new
-      # Special case: If the name is being removed, leave references intact;
-      # this is used to clean up duplicates.
-      if {$newName != ""} {
-        foreach x [mk::select $db.refs to $id] {
-          set x [mk::get $db.refs!$x from]
-          set y [mk::get $db.pages!$x page]
-          mk::set $db.pages!$x page [replaceLink $y $name $newName]
+        # rewrite all pages referencing $id changing old name to new
+        # Special case: If the name is being removed, leave references intact;
+        # this is used to clean up duplicates.
+        if {$newName != ""} {
+          foreach x [mk::select $db.refs to $id] {
+            set x [mk::get $db.refs!$x from]
+            set y [mk::get $db.pages!$x page]
+            mk::set $db.pages!$x page [replaceLink $y $name $newName]
+          }
+
+          # don't forget to adjust links in this page itself
+          set text [replaceLink $text $name $newName]
         }
 
-        # don't forget to adjust links in this page itself
-        set text [replaceLink $text $name $newName]
+        AdjustTitleCache $name $newName $id
+        mk::set $db.pages!$id name $newName
       }
 
-      AdjustTitleCache $name $newName $id
-      mk::set $db.pages!$id name $newName
+      if {$newdate != ""} {
+        # change the date if requested
+        mk::set $db.pages!$id date $newdate
+      }
+
+      # avoid creating a log entry and committing if nothing changed
+      set text [string trimright $text]
+      if {$changed || $text != $page} {
+        # make sure it parses before deleting old references
+        set newRefs [StreamToRefs [TextToStream $text] [list ::Wikit::InfoProc $db]]
+        delRefs $id $db
+        addRefs $id $db $newRefs
+
+        if {$id == 3} {
+          catch { gButton::modify Help -text [lindex [Wikit::GetTitle 3] 0] }
+        }
+
+        # If this isn't the first time that the given page has been stored
+        # in the databse, make a change log entry for rollback.
+
+        mk::set $db.pages!$id page $text who $newWho
+        if {$page ne {} || [mk::view size $db.pages!$id.changes]} {
+          UpdateChangeLog $db $id $name $date $who $page $text
+        }
+
+        if {$newdate == ""} {
+          mk::set $db.pages!$id date [clock seconds]
+          AddLogEntry $id $db
+          DoCommit $db
+        }
+      }
+    }] r eo} {
+      Debug.error "SavePageDb: '$r' ($eo)"
     }
 
-    if {$newdate != ""} {
-      # change the date if requested
-      mk::set $db.pages!$id date $newdate
-    }
-
-    # avoid creating a log entry and committing if nothing changed
-    set text [string trimright $text]
-    if {!$changed && $text == $page} {
-      return
-    }
-
-    # make sure it parses before deleting old references
-    set newRefs [StreamToRefs [TextToStream $text] [list ::Wikit::InfoProc $db]]
-    delRefs $id $db
-    addRefs $id $db $newRefs
-
-    if {$id == 3} {
-      catch { gButton::modify Help -text [lindex [Wikit::GetTitle 3] 0] }
-    }
-
-    # If this isn't the first time that the given page has been stored
-    # in the databse, make a change log entry for rollback.
-
-    mk::set $db.pages!$id page $text who $newWho
-    if {$page ne {} || [mk::view size $db.pages!$id.changes]} {
-      UpdateChangeLog $db $id $name $date $who $page $text
-    }
-
-    if {$newdate == ""} {
-      mk::set $db.pages!$id date [clock seconds]
-      AddLogEntry $id $db
-      DoCommit $db
-    }
+    ::thread::mutex unlock $mutex	;# unlock for db update
   }
 
   #----------------------------------------------------------------------------

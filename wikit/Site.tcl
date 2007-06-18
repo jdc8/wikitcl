@@ -136,7 +136,7 @@ Debug off cookies 10
 Debug off dispatch 10
 Debug off wikit 10
 
-set worker_args [list profile $profile wikidb $wikidb]
+set worker_args [list profile $profile wikidb $wikidb mkmutex $mkmutex]
 
 if {$profile} {
     ::profiler::init
@@ -153,6 +153,8 @@ if {$profile} {
 if {$profile} {
     ::profiler::resume
 }
+
+set mkmutex [thread::mutex create]
 
 # load Wikit packages
 package require Wikit::Format
