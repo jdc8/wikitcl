@@ -132,22 +132,25 @@ namespace eval Wikit {
       if {$msg != "" && ![string equal $msg $db]} {
         error $msg
       }
-
-      mk::view layout $db.pages	{
-        name
-        page
-        date:I
-        who
-        {changes {
+      if {0} {
+        # temporarily stop doing this - it hangs the system
+        # when db is corrupt.
+        mk::view layout $db.pages	{
+          name
+          page
           date:I
           who
-          {diffs {
-            from:I to:I old
+          {changes {
+            date:I
+            who
+            {diffs {
+              from:I to:I old
+            }}
           }}
-        }}
+        }
+        
+        mk::view layout $db.refs	{from:I to:I}
       }
-      
-      mk::view layout $db.refs	{from:I to:I}
 
       # if there are no references, probably it's the first time, so recalc
       if {!$readonly && [mk::view size $db.refs] == 0} {
