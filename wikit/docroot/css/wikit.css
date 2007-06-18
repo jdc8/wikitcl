@@ -227,3 +227,17 @@ span.newwikiline pre {
   background: #80ff80; 
   margin: 0;
 }
+
+span.nick {
+ font-size: 90%;
+ color: gray;
+ margin: 0 0 2px 2em;
+}
+span.dots {
+ display: none;
+}
+a.delta {
+ font-size: 90%;
+ color: gray;
+ margin: 0 0 0 0.5em;
+}
