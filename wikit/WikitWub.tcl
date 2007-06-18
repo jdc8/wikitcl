@@ -1548,6 +1548,7 @@ Debug off direct 10
 Debug off convert 10
 Debug off cookies 10
 Debug off socket 10
+Debug on error 10
 
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
 Debug.log {LOCAL: '$r' ($eo)} 6
