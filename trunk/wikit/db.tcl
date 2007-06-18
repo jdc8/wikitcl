@@ -153,12 +153,6 @@ namespace eval Wikit {
         # this can take quite a while, unfortunately - but only once
         ::Wikit::FixPageRefs
       }
-
-      # get rid of some old cruft, now that stored data has become incompatible
-      mk::view layout $db.archive {} ;# get rid of old def
-      catch { mk::view size $db.admin 0 }
-      catch { mk::view size $db.scripts 0 }
-      catch { mk::view size $db.archive 0 }
     }
   }
 
