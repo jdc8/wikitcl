@@ -136,7 +136,7 @@ Debug off cookies 10
 Debug off dispatch 10
 Debug off wikit 10
 
-set worker_args [list profile $profile wikidb $wikidb mkmutex $mkmutex]
+set worker_args [list profile $profile wikidb $wikidb]
 
 if {$profile} {
     ::profiler::init
@@ -227,7 +227,7 @@ Debug.log {STARTING BACKENDS}
 
 package require Backend
 set Backend::incr $backends	;# reduce the backend thread quantum for faster testing
-Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docroot $docroot wikitroot $wikitroot dataroot $data utf8re $utf8re {*}$worker_args
+Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docroot $docroot wikitroot $wikitroot dataroot $data utf8re $utf8re mkmutex $mkmutex {*}$worker_args
 
 # start Listener
 set server_id "Wub [package present Httpd]" ;# name of this server
