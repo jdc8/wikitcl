@@ -331,13 +331,17 @@ namespace eval WikitWub {
 	set results {}
 	set lastDay 0
 	set threshold [expr {[clock seconds] - 7 * 86400}]
+	set deletesAdded 0
 
 	foreach id [mk::select wdb.pages -rsort date] {
 	    set result ""
-	    lassign [mk::get wdb.pages!$id date name who] date name who
+	    lassign [mk::get wdb.pages!$id date name who page] date name who page
 	    
 	    # these are fake pages, don't list them
 	    if {$id == 2 || $id == 4} continue
+
+	    # skip cleared pages
+	    if {[string length $name] == 0 || [string length $page] <= 1} continue
 
 	    # only report last change to a page on each day
 	    set day [expr {$date/86400}]
@@ -345,6 +349,13 @@ namespace eval WikitWub {
 	    #insert a header for each new date
 	    incr count
 	    if {$day != $lastDay} {
+
+		if { $lastDay && !$deletesAdded } { 
+		    lappend results </ul>\n<ul>
+		    lappend results [<li> [<a> href /_cleared "Cleared pages (title and/or page)"]]
+		    set deletesAdded 1
+		}
+
 		# only cut off on day changes and if over 7 days reported
 		if {$count > 100 && $date < $threshold} {
 		    break
@@ -372,6 +383,38 @@ namespace eval WikitWub {
 	}
 
 	return [join $results \n]
+    }
+
+    proc /cleared { r } {
+	set results "<h1>Cleared pages</h1>"
+	lappend results <ul>
+	set count 0
+	foreach id [mk::select wdb.pages -rsort date] {
+	    lassign [mk::get wdb.pages!$id date name who page] date name who page
+
+	    # these are fake pages, don't list them
+	    if {$id == 2 || $id == 4} continue
+
+	    # skip pages with contents in both name and page
+	    if {[string length $name] && [string length $page] > 1} continue
+
+	    if { [string length $name] } {
+		set link [<a> href /$id $name]
+	    } else {
+		set link [<a> href /$id $id]
+	    }
+	    append link "&nbsp;&nbsp;&nbsp;. . .&nbsp;&nbsp;&nbsp;$who&nbsp;&nbsp;&nbsp;"
+	    append link [<a> href /_history/$id history]
+	    append link "&nbsp;&nbsp;&nbsp;. . .[clock format $date -gmt 1 -format {%B %e, %Y}]"
+	    lappend results [<li> $link]
+	    incr count
+	    if { $count >= 100 } {
+		break
+	    }
+	}	
+	lappend result </ul>
+
+	return [Http NoCache [Http Ok $r [join $results \n]]]
     }
 
     proc get_page_with_version {N V A} {
@@ -1457,6 +1500,7 @@ proc incoming {req} {
 	    /_revision/* -
 	    /_diff/* -
 	    /_ref/* -
+	    /_cleared -
 	    /_search/* -
 	    /_search -
 	    /_activity -
