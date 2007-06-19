@@ -194,6 +194,7 @@ namespace eval WikitWub {
 	a change to this page while you were editing.</p>
 	<p><italic>Please restart a new [Ref /_edit/$N edit]
 	and merge your version,	which is shown in full below.</italic></p>
+	<p>Got '$O' expected '$X'</p>
 	<hr size=1 />
 	<p><pre>[armour $C]</pre></p>
 	<hr size=1 />
@@ -836,6 +837,7 @@ namespace eval WikitWub {
 	    # added 2002-06-13 - edit conflict detection
 	    if {$O ne [list $date $who]} {
 		Debug.error {Conflict on Edit: '$O' ne '[list $date $who]'}
+		set X [list $date $who]
 		variable conflict
 		return [Http NoCache [Http Ok $r [subst $conflict] x-text/system]]
 	    }
