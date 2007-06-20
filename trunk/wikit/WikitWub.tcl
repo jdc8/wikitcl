@@ -770,7 +770,7 @@ namespace eval WikitWub {
 	    }
 	}
 
-	return [Http NoCache [Http Redirect $r $R]]
+	return [Http NoCache [Http SeeOther $r $R]]
     }
 
     proc who {r} {
@@ -884,7 +884,7 @@ namespace eval WikitWub {
 		if {$who eq "$nick@[dict get $r -ipaddr]"} {
 		    # this is a ghostly conflict-with-self - log and ignore
 		    Debug.error "Conflict on Edit of $N: '$O' ne '[list $date $who]' at date $when"
-		    return [Http Redirect $r "http://[dict get $r host]/$N"]
+		    return [Http SeeOther $r "http://[dict get $r host]/$N"]
 		} else {
 		    set X [list $date $who]
 		    variable conflict
