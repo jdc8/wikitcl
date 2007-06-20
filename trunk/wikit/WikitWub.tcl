@@ -1603,7 +1603,7 @@ Debug off cookies 10
 Debug off socket 10
 Debug on error 10
 
-Debug.log {RESTART: [clock format [clock second]]}
+Debug.error {RESTART: [clock format [clock second]]}
 
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
 Debug.log {LOCAL: '$r' ($eo)} 6
