@@ -863,8 +863,8 @@ namespace eval WikitWub {
 
 	if {[catch {
 	    ::Wikit::pagevars $N name date who
-	} r eo]} {
-	    return [Http NotFound $r "<h2>$N is not a valid page.</h2>
+	} er eo]} {
+	    return [Http NotFound $er "<h2>$N is not a valid page.</h2>
 		<p>[armour $r]([armour $eo])</p>"]
 	}
 
@@ -884,7 +884,7 @@ namespace eval WikitWub {
 		#lassign [split [lassign $O ewhen] @] enick eip
 		if {$who eq "$nick@[dict get $r -ipaddr]"} {
 		    # this is a ghostly conflict-with-self - log and ignore
-		    Debug.error {Conflict on Edit: '$O' ne '[list $date $who]' at date $when}
+		    Debug.error "Conflict on Edit: '$O' ne '[list $date $who]' at date $when"
 		    return [Http Redirect $r "http://[dict get $r host]/$N"]
 		} else {
 		    set X [list $date $who]
@@ -930,7 +930,7 @@ namespace eval WikitWub {
 		}
 
 		set who $nick@[dict get $r -ipaddr]
-		::Wikit::SavePage $N [string map {"Robert Abitbol" unperson} $C] $who $name when
+		::Wikit::SavePage $N [string map {"Robert Abitbol" unperson} $C] $who $name $when
 	    }
 	}
 
