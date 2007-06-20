@@ -569,11 +569,11 @@ namespace eval Wikit {
           UpdateChangeLog $db $id $name $date $who $page $text
         }
 
-        #if {$newdate == ""} {
+        if {$newdate == ""} {
           mk::set $db.pages!$id date [clock seconds]
           AddLogEntry $id $db
           DoCommit $db
-        #}
+        }
       }
     } r eo]} {
       Debug.error "SavePageDb: '$r' ($eo)"
