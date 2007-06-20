@@ -863,13 +863,15 @@ namespace eval WikitWub {
 
 	if {[catch {
 	    ::Wikit::pagevars $N name date who
-	}]} {
-	    return [Http NotFound $r <h2>$N is not a valid page.</h2>]
+	} r eo]} {
+	    return [Http NotFound $r "<h2>$N is not a valid page.</h2>
+		<p>[armour $r]([armour $eo])</p>"]
 	}
 
 	# is the caller logged in?
 	set nick [who $r]
-	Debug.wikit {/save who: $nick - modified:"$date $who" O:$O }
+	set when [expr {[dict get $r -received] / 1000000}]
+	Debug.wikit {/save who: $nick $when - modified:"$date $who" O:$O }
 
 	# if there is new page content, save it now
 	variable protected
@@ -879,10 +881,16 @@ namespace eval WikitWub {
 	} {
 	    # added 2002-06-13 - edit conflict detection
 	    if {$O ne [list $date $who]} {
-		Debug.error {Conflict on Edit: '$O' ne '[list $date $who]'}
-		set X [list $date $who]
-		variable conflict
-		return [Http NoCache [Http Ok $r [subst $conflict] x-text/system]]
+		#lassign [split [lassign $O ewhen] @] enick eip
+		if {$who eq "$nick@[dict get $r -ipaddr]"} {
+		    # this is a ghostly conflict-with-self - log and ignore
+		    Debug.error {Conflict on Edit: '$O' ne '[list $date $who]' at date $when}
+		    return [Http Redirect $r "http://[dict get $r host]/$N"]
+		} else {
+		    set X [list $date $who]
+		    variable conflict
+		    return [Http NoCache [Http Conflict $r [subst $conflict]]]
+		}
 	    }
 
 	    # newline-normalize content
@@ -922,8 +930,7 @@ namespace eval WikitWub {
 		}
 
 		set who $nick@[dict get $r -ipaddr]
-		::Wikit::SavePage $N [string map {"Robert Abitbol" unperson} $C] $who $name
-		mk::file commit wdb
+		::Wikit::SavePage $N [string map {"Robert Abitbol" unperson} $C] $who $name when
 	    }
 	}
 
