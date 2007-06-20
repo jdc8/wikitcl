@@ -934,7 +934,7 @@ namespace eval WikitWub {
 	    }
 	}
 
-	return [Http Redirect $r "http://[dict get $r host]/$N"]
+	return [Http SeeOther $r "http://[dict get $r host]/$N"]
     }
 
     proc GetPage {id} {
