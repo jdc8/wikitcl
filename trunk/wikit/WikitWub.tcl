@@ -131,7 +131,6 @@ namespace eval WikitWub {
 	<input type='hidden' name='O' value='[list $date $who]'>
 	<input type='hidden' name='_charset_'>
 	<input type='submit' name='save' value='Save' [expr {$nick eq "" ? "disabled" : ""}] />
-	<input type='submit' name='cancel' value='Cancel' /></form>
     <hr size=1>
     Editing quick-reference:
     <blockquote><font size=-1>
