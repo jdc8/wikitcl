@@ -770,7 +770,7 @@ namespace eval WikitWub {
 	    }
 	}
 
-	return [Http NoCache [Http Created $r $R]]
+	return [Http NoCache [Http Created $r $R] "<p>Created Account</p>"]
     }
 
     proc who {r} {
@@ -884,7 +884,7 @@ namespace eval WikitWub {
 		if {$who eq "$nick@[dict get $r -ipaddr]"} {
 		    # this is a ghostly conflict-with-self - log and ignore
 		    Debug.error "Conflict on Edit of $N: '$O' ne '[list $date $who]' at date $when"
-		    return [Http Created $r "http://[dict get $r host]/$N"]
+		    return [Http Created $r http://[dict get $r host]/$N "<p>Edited Page</p>"]
 		} else {
 		    set X [list $date $who]
 		    variable conflict
@@ -934,7 +934,7 @@ namespace eval WikitWub {
 	    }
 	}
 
-	return [Http Created $r "http://[dict get $r host]/$N"]
+	return [Http Created $r http://[dict get $r host]/$N "<p>Edited Page</p>"]
     }
 
     proc GetPage {id} {
@@ -1003,10 +1003,9 @@ namespace eval WikitWub {
 
 	set R [Http Referer $r]
 	if {$R eq ""} {
-	    return [Http Created $r "http://[dict get $r host]/4"]
-	} else {
-	    return [Http Created $r $R]
+	    set R http://[dict get $r host]/4
 	}
+	return [Http Created $r $R "<p>Loaded MOTD</p>"]
     }
 
 	# called to generate a page with references
