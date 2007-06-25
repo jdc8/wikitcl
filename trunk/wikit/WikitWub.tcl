@@ -201,7 +201,7 @@ namespace eval WikitWub {
 
     # converter from x-text/system to html-fragment
     # arranges for headers metadata
-    proc .x-text/system.x-text/x-html-fragment {rsp} {
+    proc .x-text/system.x-x-text/html-fragment {rsp} {
 	# split out headers
 	set headers ""
 	set body [split [string trimleft [dict get $rsp -content] \n] \n]
