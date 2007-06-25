@@ -201,7 +201,7 @@ namespace eval WikitWub {
 
     # converter from x-text/system to html-fragment
     # arranges for headers metadata
-    proc .x-text/system.text/x-html-fragment {rsp} {
+    proc .x-text/system.x-text/x-html-fragment {rsp} {
 	# split out headers
 	set headers ""
 	set body [split [string trimleft [dict get $rsp -content] \n] \n]
@@ -218,14 +218,14 @@ namespace eval WikitWub {
 	    # this is a header line
 	    set val [lassign [split $line :] tag]
 	    dict lappend rsp -headers "<$tag>[string trim [join $val]]</$tag>"
-	    Debug.convert {.x-text/system.text/x-html-fragment '$tag:$val' - $start}
+	    Debug.convert {.x-text/system.x-text/html-fragment '$tag:$val' - $start}
 	}
 
 	set content "[join [lrange $body $start end] \n]\n"
 
 	return [dict replace $rsp \
 		    -content $content \
-		    content-type text/x-html-fragment]
+		    content-type x-text/html-fragment]
     }
 
     variable htmlhead {<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">}
@@ -239,7 +239,7 @@ namespace eval WikitWub {
     }
 
     # convertor for x-html-fragment to html
-    proc .text/x-html-fragment.text/html {rsp} {
+    proc .x-text/html-fragment.text/html {rsp} {
 	set rspcontent [dict get $rsp -content]
 
 	if {[string match "<!DOCTYPE*" $rspcontent]} {
@@ -1356,7 +1356,7 @@ proc do {args} {
     }
 }
 
-Direct wikit -namespace ::WikitWub -ctype "text/x-html-fragment"
+Direct wikit -namespace ::WikitWub -ctype "x-text/html-fragment"
 Convert convert -namespace ::WikitWub
 
 foreach {dom expiry} {css {tomorrow} images {next week} scripts {tomorrow} img {next week} html 0 bin 0} {
