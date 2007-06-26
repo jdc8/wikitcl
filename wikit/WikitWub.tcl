@@ -722,7 +722,7 @@ namespace eval WikitWub {
     set redir {meta: http-equiv='refresh' content='10;url=$url'
 
 	<h1>Redirecting to $url</h1>
-	<p>$C</p>
+	<p>$content</p>
     }
 
     proc redir {r url content} {
