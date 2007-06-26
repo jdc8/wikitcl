@@ -371,7 +371,7 @@ namespace eval WikitWub {
 	    append result [<a> href /$id $name]
 	    append result [<span> class dots ". . ."]
 	    append result [<span> class nick $who]
-	    append result [<a> class delta href /_diff/$id $delta]
+	    append result [<a> class delta href /_diff/$id#diff0 $delta]
 	    
 	    lappend results [<li> $result]
 	}
@@ -388,6 +388,7 @@ namespace eval WikitWub {
 	set results "<h1>Cleared pages</h1>"
 	lappend results <ul>
 	set count 0
+	set lastDay 0
 	foreach id [mk::select wdb.pages -rsort date] {
 	    lassign [mk::get wdb.pages!$id date name who page] date name who page
 
@@ -397,22 +398,38 @@ namespace eval WikitWub {
 	    # skip pages with contents in both name and page
 	    if {[string length $name] && [string length $page] > 1} continue
 
+	    # skip pages with date 0
+	    if { $date == 0 } continue
+
+	    set day [expr {$date/86400}]
+
+	    if { $day != $lastDay } {
+		set lastDay $day
+		if {$lastDay} {
+		    lappend results </ul>
+		}
+		lappend results [<p> [<b> [clock format $date -gmt 1 -format {%B %e, %Y}]]]
+		lappend results <ul>		
+	    }
+
 	    if { [string length $name] } {
 		set link [<a> href /$id $name]
 	    } else {
 		set link [<a> href /$id $id]
 	    }
-	    append link "&nbsp;&nbsp;&nbsp;. . .&nbsp;&nbsp;&nbsp;$who&nbsp;&nbsp;&nbsp;"
-	    append link [<a> href /_history/$id history]
-	    append link "&nbsp;&nbsp;&nbsp;. . .[clock format $date -gmt 1 -format {%B %e, %Y}]"
+	    append link [<span> class dots ". . ."]
+	    append link [<span> class nick $who]
+	    append link [<span> class dots ". . ."]
+	    append link [<a> class delta href /_history/$id history]
 	    lappend results [<li> $link]
 	    incr count
 	    if { $count >= 100 } {
 		break
 	    }
 	}	
-	lappend result </ul>
-
+	if {$lastDay} {
+	    lappend result </ul>
+	}
 	return [Http NoCache [Http Ok $r [join $results \n]]]
     }
 
@@ -666,17 +683,17 @@ namespace eval WikitWub {
 		append result [<td> $who]
 
 		if { $prev >= 0 } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev "$prev"]]
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev#diff0 "$prev"]]
 		} else {
 		    append result <td></td>
 		}
 		if { $next < $nver } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$next "$next"]]
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$next#diff0 "$next"]]
 		} else {
 		    append result <td></td>
 		}
 		if { $vn != $curr } {
-		    append result [<td> [<a> href /_diff/$N?V=$curr&D=$vn "Current"]]		
+		    append result [<td> [<a> href /_diff/$N?V=$curr&D=$vn#diff0 "Current"]]		
 		} else {
 		    append result <td></td>
 		}

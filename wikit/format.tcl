@@ -1112,6 +1112,7 @@ namespace eval Wikit::Format {
     set vstate "" ; # Initial state of visual FSM
     set count 0
     set bltype "a"
+    set insdelcnt 0
     variable html_frag
 
     foreach {mode text} $s {
@@ -1196,10 +1197,12 @@ namespace eval Wikit::Format {
               append result "  </span>\n"
             }
             n {
-              append result "<div class='newwikiline'>"
+              append result "<div class='newwikiline' id='diff$insdelcnt'>"
+              incr insdelcnt
             }
             o {
-              append result "<div class='oldwikiline'>"
+              append result "<div class='oldwikiline' id='diff$insdelcnt'>"
+              incr insdelcnt
             }
           }
           set state $mode 
