@@ -719,6 +719,17 @@ namespace eval WikitWub {
 	set menus($v) [Ref $v $n]
     }
 
+    set redir {meta: http-equiv='refresh' content='10;url=$url'
+
+	<h1>Redirecting to $url</h1>
+	<p>$C</p>
+    }
+
+    proc redir {r url content} {
+	variable redir
+	return [Http NoCache [Http SeeOther $r $url [subst $redir]]]
+    }
+
     proc /login {r {nickname ""} {R ""}} {
 	# cleanse nickname
 	regsub -all {[^A-Za-z0-0_]} $nickname {} nickname
@@ -770,7 +781,7 @@ namespace eval WikitWub {
 	    }
 	}
 
-	return [Http NoCache [Http SeeOther $r $R <p>[<a> href $R "Created Account"]</p>]]
+	return [redir $r $R [<a> href $R "Created Account"]]
     }
 
     proc who {r} {
@@ -885,7 +896,7 @@ namespace eval WikitWub {
 		    # this is a ghostly conflict-with-self - log and ignore
 		    Debug.error "Conflict on Edit of $N: '$O' ne '[list $date $who]' at date $when"
 		    set url http://[dict get $r host]/$N
-		    return [Http NoCache [Http SeeOther $r $url <p>[<a> href $url "Edited Page"]</p>]]
+		    return [redir $r $url [<a> href $url "Edited Page"]]
 		} else {
 		    set X [list $date $who]
 		    variable conflict
@@ -935,7 +946,7 @@ namespace eval WikitWub {
 	    }
 	}
 	set url http://[dict get $r host]/$N
-	return [Http NoCache [Http SeeOther $r $url <p>[<a> href $url "Edited Page"]</p>]]
+	return [redir $r $url [<a> href $url "Edited Page"]]
     }
 
     proc GetPage {id} {
@@ -1006,7 +1017,7 @@ namespace eval WikitWub {
 	if {$R eq ""} {
 	    set R http://[dict get $r host]/4
 	}
-	return [Http NoCache [Http SeeOther $r $R <p>[<a> href $R "Loaded MOTD"]</p>]]
+	return [redir $r $R [<a> href $R "Loaded MOTD"]]
     }
 
 	# called to generate a page with references
