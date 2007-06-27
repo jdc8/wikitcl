@@ -5,7 +5,7 @@ package provide Wikit::Format 1.1
 
 namespace eval Wikit::Format {
   namespace export TextToStream StreamToTk StreamToHTML StreamToRefs \
-    StreamToUrls Expand_HTML FormatTocJavascriptDtree
+    StreamToUrls Expand_HTML FormatTocJavascriptDtree ShowDiffs
 
   # In this file:
   #
@@ -1534,6 +1534,62 @@ namespace eval Wikit::Format {
 
   proc armour_quote { t } {
     return [string map {\" &quot; ' &#39\;} $t]
+  }
+    
+  proc markInsDel { l insdelcntnm } {
+    upvar $insdelcntnm insdelcnt
+    set result ""
+    while {
+           [regsub -all {~~~~([^`]+?)~~~~} $l "\0\1o+\0\\1\0\1o-\0" l] ||
+           [regsub -all {\^\^\^\^([^`]+?)\^\^\^\^} $l "\0\1n+\0\\1\0\1n-\0" l]
+         } {}
+    
+    set len 0
+    foreach item [split $l \0] {
+      
+      set cmd [string trimleft $item \1]
+      
+      switch -exact -- $cmd {
+        n+      {append result "<ins id='$insdelcnt'>" ; incr insdelcnt}
+        n-      {append result </ins>}
+        o+      {append result "<del id='$insdelcnt'>" ; incr insdelcnt}
+        o-      {append result </del>}
+        default {
+          if {$cmd != ""} {
+            append result [quote $cmd]
+          }
+        }
+      }
+    }
+    return $result
+  }
+
+  proc ShowDiffs { t } {
+    set insdelcnt 0
+    set ctxt ""
+    set result "<pre class='prediff'>"
+    foreach l [split $t "\n"] {
+      if { [string match ">>>>>>*" $l] } { 
+        append result [markInsDel $ctxt insdelcnt]
+        set ctxt ""
+        foreach {bltype page version who when} [split [string range $l 6 end] ";"] break
+        if { $bltype eq "n" } {
+          append result "<div class='newwikiline' id='diff$insdelcnt'>"
+        } else {
+          append result "<div class='oldwikiline' id='diff$insdelcnt'>"
+        }
+        incr insdelcnt
+      } elseif { $l eq "<<<<<<" } {
+        append result [markInsDel $ctxt insdelcnt]
+        set ctxt ""
+        append result "</div>"
+      } else {
+        append ctxt $l\n
+      }
+    }
+    append result [markInsDel $ctxt insdelcnt]
+    append result </pre>
+    return $result
   }
 
 } ;# end of namespace

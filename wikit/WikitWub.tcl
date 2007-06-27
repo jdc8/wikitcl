@@ -460,7 +460,19 @@ namespace eval WikitWub {
 	return $C
     }
 
-    proc /diff {r N {V -1} {D -1}} {
+    proc wordlist { l } {
+	set rl [split [string map {{ } \0\ } $l] " "]
+    }
+
+    proc shiftNewline { s m } {
+	if { [string index $s end] eq "\n" } {
+	    return "$m[string range $s 0 end-1]$m\n"
+	} else {
+	    return "$m$s$m"
+	}
+    }
+
+    proc /diff {r N {V -1} {D -1} {W 0}} {
 	Debug.wikit {/diff $args}
 
 	set ext [file extension $N]	;# file extension?
@@ -497,13 +509,65 @@ namespace eval WikitWub {
 	set C ""
 	foreach {l1 l2} [::struct::list::LlongestCommonSubsequence $t1 $t2] {
 	    foreach i1 $l1 i2 $l2 {
-		while { $p1 < $i1 } { 
-		    append C ">>>>>>n;$N;$V;;\n[lindex $t1 $p1]\n<<<<<<\n"
-		    incr p1
-		}
-		while { $p2 < $i2 } { 
-		    append C ">>>>>>o;$N;$D;;\n[lindex $t2 $p2]\n<<<<<<\n"
-		    incr p2
+		if { $W && $p1 < $i1 && $p2 < $i2 } {
+		    set d1 ""
+		    set d2 ""
+		    set pd1 0
+		    set pd2 0
+		    while { $p1 < $i1 } { 
+			append d1 "[lindex $t1 $p1]\n"
+			incr p1
+		    }
+		    while { $p2 < $i2 } { 
+			append d2 "[lindex $t2 $p2]\n"
+			incr p2
+		    }
+		    set d1 [wordlist $d1]
+		    set d2 [wordlist $d2]
+		    foreach {ld1 ld2} [::struct::list::LlongestCommonSubsequence $d1 $d2] {
+			foreach id1 $ld1 id2 $ld2 {
+			    while { $pd1 < $id1 } { 
+				set w [lindex $d1 $pd1]
+				if { [string length $w] } { 
+				    append C [shiftNewline $w "^^^^"]
+				}
+				incr pd1
+			    }
+			    while { $pd2 < $id2 } {
+				set w [lindex $d2 $pd2]
+				if { [string length $w] } {
+				    append C [shiftNewline $w "~~~~"]
+				}
+				incr pd2
+			    }
+			    append C "[lindex $d1 $id1]"
+			    incr pd1
+			    incr pd2
+			}
+			while { $pd1 < [llength $d1] } { 
+			    set w [lindex $d1 $pd1]
+			    if { [string length $w] } { 
+				append C [shiftNewline $w "^^^^"]
+			    }
+			    incr pd1
+			}
+			while { $pd2 < [llength $d2] } { 
+			    set w [lindex $d2 $pd2]
+			    if { [string length $w] } {
+				append C [shiftNewline $w "~~~~"]
+			    }
+			    incr pd2
+			}
+		    }
+		} else {
+		    while { $p1 < $i1 } { 
+			append C ">>>>>>n;$N;$V;;\n[lindex $t1 $p1]\n<<<<<<\n"
+			incr p1
+		    }
+		    while { $p2 < $i2 } { 
+			append C ">>>>>>o;$N;$D;;\n[lindex $t2 $p2]\n<<<<<<\n"
+			incr p2
+		    }
 		}
 		append C "[lindex $t1 $i1]\n"
 		incr p1
@@ -517,6 +581,10 @@ namespace eval WikitWub {
 	while { $p2 < [llength $t2] } { 
 	    append C ">>>>>>o;$N;$V;;\n[lindex $t2 $p2]\n<<<<<<\n"
 	    incr p2
+	}
+
+	if { $W } {
+	    set C [regsub -all "\0" $C " "]
 	}
 
 	set menu {}
@@ -539,9 +607,12 @@ namespace eval WikitWub {
 		default {
 		    set Title "<h1>Difference between version $V and $D for [Ref $N]</h1>"
 		    set name "Difference between version $V and $D for $pname"
-		    lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
-		    set C "<span class='newwikiline'>Lines added in version $V are highlighted like this</span>, and <span class='oldwikiline'>Lines deleted in version $D are highlighted like this.</span><hr><p>$C"
-
+		    if { $W } {
+			set C [::Wikit::ShowDiffs $C]
+		    } else {
+			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
+		    }
+		    set C "<span class='newwikiline'>Text added in version $V is highlighted like this</span>, and <span class='oldwikiline'>text deleted from version $D is highlighted like this.</span><hr><p>$C"
 		}
 	    }
 	}
@@ -668,7 +739,7 @@ namespace eval WikitWub {
 	} else {
 	    Wikit::pagevars $N name
 	    append result "<table class='history'>\n<tr>"
-	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Compare with} 3 Annotated 1 WikiText 1} {
+	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Line compare with} 3 {Word compare with} 3 Annotated 1 WikiText 1} {
 		append result [<th> colspan $span $column]
 	    }
 	    append result </tr>\n
@@ -697,6 +768,23 @@ namespace eval WikitWub {
 		} else {
 		    append result <td></td>
 		}
+
+		if { $prev >= 0 } {
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev&W=1#diff0 "$prev"]]
+		} else {
+		    append result <td></td>
+		}
+		if { $next < $nver } {
+		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$next&W=1#diff0 "$next"]]
+		} else {
+		    append result <td></td>
+		}
+		if { $vn != $curr } {
+		    append result [<td> [<a> href /_diff/$N?V=$curr&D=$vn&W=1#diff0 "Current"]]		
+		} else {
+		    append result <td></td>
+		}
+
 		append result [<td> [<a> href /_revision/$N?V=$vn&A=1 $vn]]
 		append result [<td> [<a> href /_revision/$N.txt?V=$vn $vn]]
 		append result </tr> \n
