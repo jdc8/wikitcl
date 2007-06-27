@@ -513,7 +513,7 @@ namespace eval Wikit {
   }
 
   # SavePageDB - store page $id ($who, $text, $newdate)
-  proc SavePageDB {db id text newWho newName {newdate ""}} {
+  proc SavePageDB {db id text newWho newName {newdate ""} {commit 1}} {
     set changed 0
 
     variable mutex;
@@ -571,6 +571,10 @@ namespace eval Wikit {
 
         if {$newdate == ""} {
           mk::set $db.pages!$id date [clock seconds]
+          set commit 1
+        }
+
+        if {$commit} {
           AddLogEntry $id $db
           DoCommit $db
         }
