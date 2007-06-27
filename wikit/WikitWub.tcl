@@ -959,7 +959,6 @@ namespace eval WikitWub {
 
 		set who $nick@[dict get $r -ipaddr]
 		::Wikit::SavePage $N [string map {"Robert Abitbol" unperson} $C] $who $name $when
-		::Wikit::DoCommit
 	    }
 	}
 	set url http://[dict get $r host]/$N
