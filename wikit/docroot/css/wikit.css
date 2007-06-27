@@ -39,6 +39,14 @@ pre {
    margin: 0;
 }
 
+pre.prediff {
+   background-color: #E0E0E0;
+   color: #000000;
+   font-weight: bold;
+   font-family: monospace;
+   margin: 0;
+}
+
 dt {
    font-weight: bold;
 }
@@ -240,4 +248,12 @@ a.delta {
  font-size: 70%;
  color: #D3D3D3;
  margin: 0 0 0 1em;
+}
+
+ins {
+  background: #80ff80;
+}
+
+del {
+  background: #ffa0a0; 
 }
