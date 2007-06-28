@@ -1550,10 +1550,11 @@ namespace eval Wikit::Format {
       set cmd [string trimleft $item \1]
       
       switch -exact -- $cmd {
-        n+      {append result "<ins id='$insdelcnt'>" ; incr insdelcnt}
+        n+      {append result "<ins id='diff$insdelcnt'>" ; incr insdelcnt}
         n-      {append result </ins>}
-        o+      {append result "<del id='$insdelcnt'>" ; incr insdelcnt}
+        o+      {append result "<del id='diff$insdelcnt'>" ; incr insdelcnt}
         o-      {append result </del>}
+
         default {
           if {$cmd != ""} {
             append result [quote $cmd]

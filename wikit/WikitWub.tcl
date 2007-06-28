@@ -461,7 +461,7 @@ namespace eval WikitWub {
     }
 
     proc wordlist { l } {
-	set rl [split [string map {{ } \0\ } $l] " "]
+	set rl [split [string map {\  \0\  \n \ \n} $l] " "]
     }
 
     proc shiftNewline { s m } {
