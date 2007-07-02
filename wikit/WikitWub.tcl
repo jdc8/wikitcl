@@ -233,7 +233,7 @@ namespace eval WikitWub {
 
     # header sent with each page
     variable head {
-	<meta name='robots' content='noindex,nofollow' />
+	<meta name='robots' content='nofollow' />
 	<style type='text/css' media='all'>@import url(/wikit.css);</style>
 	<link rel='alternate' type='application/rss+xml' title='RSS' href='/rss.xml'>
     }
