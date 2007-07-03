@@ -111,7 +111,7 @@ namespace eval WikitWub {
     variable refs {title: References to $N
 
 	[div container {
-	    [div header {<h1>References to [Ref $N]</h1>}]
+	    [div header [<h1> "References to [Ref $N]"]]
 	    [div {wrapper content} {$C}]
 	    <hr noshade />
 	    [div footer {
@@ -232,8 +232,8 @@ namespace eval WikitWub {
     variable language "en"	;# language for HTML
 
     # header sent with each page
+    #<meta name='robots' content='index,nofollow' />
     variable head {
-	<meta name='robots' content='nofollow' />
 	<style type='text/css' media='all'>@import url(/wikit.css);</style>
 	<link rel='alternate' type='application/rss+xml' title='RSS' href='/rss.xml'>
     }
@@ -813,7 +813,7 @@ namespace eval WikitWub {
 		set name $page
 	    }
 	}
-	return "<a rel='nofollow' href='/[string trimleft $url /]'>$name</a>"
+	return [<a> href /[string trimleft $url /] $name]
     }
 
     variable protected
