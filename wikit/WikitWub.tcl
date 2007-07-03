@@ -1491,6 +1491,16 @@ proc disconnected {args} {
 proc incoming {req} {
     inQ put $req
 
+    # some code to detect races (we hope)
+    set chans [chan names sock*]
+    set s [Dict get? $req -sock]
+    if {[llength $chans] > 1
+	|| ($::sock ne "" && $::sock ni $chans)
+	|| ($s ne "" && $s ni $chans)
+    } {
+	Debug.error {RACE: new req from $s/$::sock ($chans)}
+    }
+
     variable response
     variable request
     while {([dict size $request] == 0)
