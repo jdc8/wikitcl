@@ -1204,6 +1204,10 @@ namespace eval Wikit::Format {
               append result "<div class='oldwikiline' id='diff$insdelcnt'>"
               incr insdelcnt
             }
+            w {
+              append result "<div class='whitespacediff' id='diff$insdelcnt'>"
+              incr insdelcnt
+            }
           }
           set state $mode 
         }
@@ -1213,6 +1217,7 @@ namespace eval Wikit::Format {
             a {
               append result "\n</div>\n"
             }
+            w -
             n -
             o {
               append result "</div>"

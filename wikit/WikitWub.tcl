@@ -472,6 +472,18 @@ namespace eval WikitWub {
 	}
     }
 
+    proc unWhiteSpace { t } { 
+	set n {}
+	foreach l $t {
+	    # Replace all but leading white-space by single space
+	    set tl [string trimleft $l]
+	    set nl [string range $l 0 [expr {[string length $l] - [string length $tl] - 1 }]]
+	    append nl [regsub -all {\s+} $tl " "]
+	    lappend n $nl
+	}
+	return $n
+    }
+
     proc /diff {r N {V -1} {D -1} {W 0}} {
 	Debug.wikit {/diff $args}
 
@@ -503,11 +515,13 @@ namespace eval WikitWub {
 	Wikit::pagevars $N pname
 
 	set t1 [split [get_page_with_version $N $V 0] "\n"]
+	if {!$W} { set uwt1 [unWhiteSpace $t1] } else { set uwt1 $t1 }
 	set t2 [split [get_page_with_version $N $D 0] "\n"]
+	if {!$W} { set uwt2 [unWhiteSpace $t2] } else { set uwt2 $t2 }
 	set p1 0
 	set p2 0
 	set C ""
-	foreach {l1 l2} [::struct::list::LlongestCommonSubsequence $t1 $t2] {
+	foreach {l1 l2} [::struct::list::LlongestCommonSubsequence $uwt1 $uwt2] {
 	    foreach i1 $l1 i2 $l2 {
 		if { $W && $p1 < $i1 && $p2 < $i2 } {
 		    set d1 ""
@@ -569,7 +583,11 @@ namespace eval WikitWub {
 			incr p2
 		    }
 		}
-		append C "[lindex $t1 $i1]\n"
+		if { [string equal [lindex $t1 $i1] [lindex $t2 $i2]] } {
+		    append C "[lindex $t1 $i1]\n"
+		} else {
+		    append C ">>>>>>w;$N;$V;;\n[lindex $t1 $i1]\n<<<<<<\n"
+		}
 		incr p1
 		incr p2
 	    }
@@ -612,7 +630,9 @@ namespace eval WikitWub {
 		    } else {
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
 		    }
-		    set C "<span class='newwikiline'>Text added in version $V is highlighted like this</span>, and <span class='oldwikiline'>text deleted from version $D is highlighted like this.</span><hr><p>$C"
+		    set tC "<span class='newwikiline'>Text added in version $V is highlighted like this</span>, <span class='oldwikiline'>text deleted from version $D is highlighted like this</span>"
+		    if {!$W} { append tC ", <span class='whitespacediff'>text with only white-space differences is highlighted like this</span>" }
+		    set C "$tC<hr><p>$C"
 		}
 	    }
 	}
