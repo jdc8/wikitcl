@@ -216,6 +216,16 @@ div.newwikiline pre {
   margin: 0;
 }
 
+div.whitespacediff {
+  margin:0;
+  background: #f0f0ff;
+}
+
+div.whitespacediff pre {
+  margin:0;
+  background: #f0f0ff;
+}
+
 span.oldwikiline {
   margin:0;
   background: #ffa0a0;
@@ -233,6 +243,16 @@ span.newwikiline {
 
 span.newwikiline pre { 
   background: #80ff80; 
+  margin: 0;
+}
+
+span.whitespacediff {
+  margin:0;
+  background: #f0f0ff;
+}
+
+span.whitespacediff pre { 
+  background: #f0f0ff; 
   margin: 0;
 }
 
