@@ -853,10 +853,11 @@ namespace eval Wikit::Format {
         x {
           # support embedded images if present in "images" view
           set iseq ""
-          if {[regexp {\.(gif|jpg|png)$} $text - ifmt]} {
+          if {[regexp -nocase {\.(gif|jpg|jpeg|png)$} $text - ifmt]} {
+            set ifmt [string tolower $ifmt]
             set iseq [mk::select wdb.images url $text -count 1]
             if {$iseq != "" && [info commands eim_$iseq] == ""} {
-              if {$ifmt == "jpg"} { set ifmt jpeg }
+              if {$ifmt eq "jpg"} { set ifmt jpeg }
               catch { package require tkimg::$ifmt }
               catch {
                 image create photo eim_$iseq -format $ifmt \
@@ -1162,7 +1163,7 @@ namespace eval Wikit::Format {
             [quote $text] $html_frag(_a)
         }
         x {
-          if {[regexp {\.(gif|jpg|png)$} $text]} {
+          if {[regexp -nocase {\.(gif|jpg|jpeg|png)$} $text]} {
             append result $html_frag(i_) $text $html_frag(tc)
           } else {
             append result \
