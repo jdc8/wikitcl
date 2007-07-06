@@ -124,36 +124,37 @@ namespace eval WikitWub {
     # page sent when editing a page
     variable edit {title: Editing $N
 
-	[div header {<h1>[Ref $N]</h1>}]
-	<form method='post' action='/_save/$N'>
-	<textarea rows='30' cols='72' name='C' style='width:100%'>$C</textarea>
-	<p />
-	<input type='hidden' name='O' value='[list $date $who]'>
-	<input type='hidden' name='_charset_'>
-	<input type='submit' name='save' value='Save' [expr {$nick eq "" ? "disabled" : ""}] />
-    <hr size=1>
-    Editing quick-reference:
-    <blockquote><font size=-1>
-    <b>LINK</b> to <b>\[<a href='../6' target='_newWindow'>Wiki formatting rules</a>\]</b> - or to
-    <b><a href='http://here.com/' target='_newWindow'>http://here.com/</a></b>
-    - use <b>\[http://here.com/\]</b> to show as
-    <b>\[<a href='http://here.com/' target='_newWindow'>1</a>\]</b>
-    <br>
-    <b>BULLETS</b> are lines with 3 spaces, an asterisk, a space - the item
-    must be one (wrapped) line
-    <br>
-    <b>NUMBERED LISTS</b> are lines with 3 spaces, a one, a dot, a space - the item
-    must be one (wrapped) line
-       <br>
-       <b>PARAGRAPHS</b> are split with empty lines,
-       <b>UNFORMATTED TEXT </b>starts with white space
-    <br>
-    <b>HIGHLIGHTS</b> are indicated by groups of single quotes - use two for
-    <b>''</b><i>italics</i><b>''</b>, three for <b>'''bold'''</b>
-    <br>
-    <b>SECTIONS</b> can be separated with a horizontal line - insert a line
-    containing just 4 dashes
-    </font></blockquote><hr size=1>
+	[<form> method post action /_save/$N [subst {
+	    [div header [<h1> "[Ref $N] [<input> type submit name save value Save {*}[expr {$nick eq "" ? {disabled 1} : {}}] {}]"]]
+	    [<textarea> rows 30 cols 72 name C style "width:100%" $C]
+	    <p />
+	    [<input> type hidden name O value [list $date $who] {}]
+	    [<input> type hidden name _charset_ {}]
+	    [<input> type submit name save value Save {*}[expr {$nick eq "" ? {disabled 1} : {}}] {}]
+	}]]
+	<hr size=1>
+	Editing quick-reference:
+	<blockquote><font size=-1>
+	<b>LINK</b> to <b>\[<a href='../6' target='_newWindow'>Wiki formatting rules</a>\]</b> - or to
+	<b><a href='http://here.com/' target='_newWindow'>http://here.com/</a></b>
+	- use <b>\[http://here.com/\]</b> to show as
+	<b>\[<a href='http://here.com/' target='_newWindow'>1</a>\]</b>
+	<br>
+	<b>BULLETS</b> are lines with 3 spaces, an asterisk, a space - the item
+	must be one (wrapped) line
+	<br>
+	<b>NUMBERED LISTS</b> are lines with 3 spaces, a one, a dot, a space - the item
+	must be one (wrapped) line
+	<br>
+	<b>PARAGRAPHS</b> are split with empty lines,
+	<b>UNFORMATTED TEXT </b>starts with white space
+	<br>
+	<b>HIGHLIGHTS</b> are indicated by groups of single quotes - use two for
+	<b>''</b><i>italics</i><b>''</b>, three for <b>'''bold'''</b>
+	<br>
+	<b>SECTIONS</b> can be separated with a horizontal line - insert a line
+	containing just 4 dashes
+	</font></blockquote><hr size=1>
     }
 
     variable maxAge "next month"	;# maximum age of login cookie
