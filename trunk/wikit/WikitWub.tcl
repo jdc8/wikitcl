@@ -125,8 +125,8 @@ namespace eval WikitWub {
     variable edit {title: Editing $N
 
 	[<form> method post action /_save/$N [subst {
-	    [div header [<h1> "[Ref $N] [<input> type submit name save value Save {*}[expr {$nick eq "" ? {disabled 1} : {}}] {}]"]]
-	    [<textarea> rows 30 cols 72 name C style "width:100%" $C]
+	    [div header [<h1> "[Ref $N] [<input> type submit name save value Save {*}[expr {$nick eq {} ? {disabled 1} : {}}] {}]"]]
+	    [<textarea> rows 30 cols 72 name C style width:100% $C]
 	    <p />
 	    [<input> type hidden name O value [list $date $who] {}]
 	    [<input> type hidden name _charset_ {}]
@@ -1115,6 +1115,7 @@ namespace eval WikitWub {
 	set who_nick ""
 	regexp {^(.+)[,@]} $who - who_nick
 	set C [armour [GetPage $N]]
+	if {$C eq ""} {set C " "}
 
 	variable edit; set result [subst $edit]
 	
