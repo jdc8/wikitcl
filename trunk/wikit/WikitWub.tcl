@@ -1506,7 +1506,7 @@ catch {
 
 # disconnected - courtesy indication
 # we've been disconnected
-proc disconnected {args} {
+proc Disconnected {args} {
     # we're pretty well stateless
 }
 
