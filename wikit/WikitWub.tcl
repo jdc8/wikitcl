@@ -984,7 +984,7 @@ namespace eval WikitWub {
 	return [WikitWub do $r 2]
     }
 
-    proc /save {r N C O save} {
+    proc /save {r N C O} {
 	variable readonly; variable roT
 	if {$readonly ne ""} {
 	    return [Http NoCache [Http Ok $r [subst $roT] x-text/system]]
@@ -1007,7 +1007,7 @@ namespace eval WikitWub {
 	# is the caller logged in?
 	set nick [who $r]
 	set when [expr {[dict get $r -received] / 1000000}]
-	Debug.wikit {/save who: $nick $when - modified:"$date $who" O:$O }
+	Debug.wikit {/save N:$N [expr {$C ne ""}] who:$nick when:$when - modified:"$date $who" O:$O }
 
 	# if there is new page content, save it now
 	variable protected
@@ -1021,11 +1021,13 @@ namespace eval WikitWub {
 		if {$who eq "$nick@[dict get $r -ipaddr]"} {
 		    # this is a ghostly conflict-with-self - log and ignore
 		    Debug.error "Conflict on Edit of $N: '$O' ne '[list $date $who]' at date $when"
-		    set url http://[dict get $r host]/$N
-		    return [redir $r $url [<a> href $url "Edited Page"]]
+		    Debug.wikit {auto-conflict $N}
+		    #set url http://[dict get $r host]/$N
+		    #return [redir $r $url [<a> href $url "Edited Page"]]
 		} else {
 		    set X [list $date $who]
 		    variable conflict
+		    Debug.wikit {conflict $N}
 		    return [Http NoCache [Http Conflict $r [subst $conflict]]]
 		}
 	    }
@@ -1045,32 +1047,34 @@ namespace eval WikitWub {
 		    set C [string replace $C $point $point "<BOGUS 0x$bogus>"]
 		}
 		variable badutf
+		Debug.wikit {badutf $N}
 		return [Http NoCache [Http Ok $r [subst $badutf] x-text/system]]
 	    }
 
 	    # Only actually save the page if the user selected "save"
-	    if {$save eq "Save" && $nick ne ""} {
-		invalidate $r $N
-		invalidate $r 4
-		invalidate $r _ref/$N
-		invalidate $r rss.xml
+	    invalidate $r $N
+	    invalidate $r 4
+	    invalidate $r _ref/$N
+	    invalidate $r rss.xml
 
-		# if this page did not exist before:
-		# remove all referencing pages.
-		#
-		# this makes sure that cache entries point to a filled-in page
-		# from now on, instead of a "[...]" link to a first-time edit page
-		if {$date == 0} {
-		    foreach from [mk::select wdb.refs to $N] {
-			invalidate $r [mk::get wdb.refs!$from from]
-		    }
+	    # if this page did not exist before:
+	    # remove all referencing pages.
+	    #
+	    # this makes sure that cache entries point to a filled-in page
+	    # from now on, instead of a "[...]" link to a first-time edit page
+	    if {$date == 0} {
+		foreach from [mk::select wdb.refs to $N] {
+		    invalidate $r [mk::get wdb.refs!$from from]
 		}
-
-		set who $nick@[dict get $r -ipaddr]
-		::Wikit::SavePage $N [string map {"Robert Abitbol" unperson} $C] $who $name $when
 	    }
+
+	    set who $nick@[dict get $r -ipaddr]
+	    Debug.wikit {SAVING $N}
+	    ::Wikit::SavePage $N [string map {"Robert Abitbol" unperson RobertAbitbol unperson Abitbol unperson} $C] $who $name $when
 	}
-	set url http://[dict get $r host]/$N
+
+	Debug.wikit {save done $N}
+	set url http://[Url host $r]/$N
 	return [redir $r $url [<a> href $url "Edited Page"]]
     }
 
@@ -1451,7 +1455,7 @@ namespace eval WikitWub {
 	    set ro ""
 	}
 	variable pageT
-	set page [string trimleft [subst $pageT] \n]
+	set page [string trimleft [subst ${pageT}] \n]
 	if {$cacheit} {
 	    return [Http DCache [Http CacheableContent $r $date $page x-text/system]]
 	} else {
