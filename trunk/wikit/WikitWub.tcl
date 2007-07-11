@@ -98,11 +98,11 @@ namespace eval WikitWub {
 	[div container {
 	    [div header {<h1 class='title'>$Title</h1>}]
 	    [expr {[info exists ro]?$ro:""}]
-	    [div {wrapper content} {<p>$C</p>}]
+	    [div {wrapper content} {$C}]
 	    <hr noshade />
 	    [div footer {
-		<p>[join $menu { - }]</p>
-		<p>[searchF]</p>
+		<p>[join $menu { - }]
+		[searchF]
 	    }]
         }]
     }
@@ -115,8 +115,8 @@ namespace eval WikitWub {
 	    [div {wrapper content} {$C}]
 	    <hr noshade />
 	    [div footer {
-		<p>[join $menu { - }]</p>
-		<p>[searchF]</p>
+		<p>[join $menu { - }]
+		[searchF]
 	    }]
 	}]
      }
@@ -127,7 +127,6 @@ namespace eval WikitWub {
 	[<form> method post action /_save/$N [subst {
 	    [div header [<h1> "[Ref $N] [<input> type submit name save value Save {*}[expr {$nick eq {} ? {disabled 1} : {}}] {}]"]]
 	    [<textarea> rows 30 cols 72 name C style width:100% $C]
-	    <p />
 	    [<input> type hidden name O value [list $date $who] {}]
 	    [<input> type hidden name _charset_ {}]
 	    [<input> type submit name save value Save {*}[expr {$nick eq "" ? {disabled 1} : {}}] {}]
@@ -135,10 +134,10 @@ namespace eval WikitWub {
 	<hr size=1>
 	Editing quick-reference:
 	<blockquote><font size=-1>
-	<b>LINK</b> to <b>\[<a href='../6' target='_newWindow'>Wiki formatting rules</a>\]</b> - or to
-	<b><a href='http://here.com/' target='_newWindow'>http://here.com/</a></b>
+	<b>LINK</b> to <b>\[<a href='../6' target='_blank'>Wiki formatting rules</a>\]</b> - or to
+	<b><a href='http://here.com/' target='_blank'>http://here.com/</a></b>
 	- use <b>\[http://here.com/\]</b> to show as
-	<b>\[<a href='http://here.com/' target='_newWindow'>1</a>\]</b>
+	<b>\[<a href='http://here.com/' target='_blank'>1</a>\]</b>
 	<br>
 	<b>BULLETS</b> are lines with 3 spaces, an asterisk, a space - the item
 	must be one (wrapped) line
@@ -176,10 +175,10 @@ namespace eval WikitWub {
     variable badutf {title: bad UTF-8
 
 	<h2>Encoding error on page $N - [Ref $N $name]</h2>
-	<p><bold>Your changes have NOT been saved</bold>,
+	<p><b>Your changes have NOT been saved</b>,
 	because	the content your browser sent contains bogus characters.
 	At character number $point.</p>
-	<p><italic>Please check your browser.</italic></p>
+	<p><i>Please check your browser.</i></p>
 	<hr size=1 />
 	<p><pre>[armour $C]</pre></p>
 	<hr size=1 />
@@ -189,11 +188,11 @@ namespace eval WikitWub {
     variable conflict {title: Edit Conflict on $N
 
 	<h2>Edit conflict on page $N - [Ref $N $name]</h2>
-	<p><bold>Your changes have NOT been saved</bold>,
+	<p><b>Your changes have NOT been saved</b>,
 	because	someone (at IP address $who) saved
 	a change to this page while you were editing.</p>
-	<p><italic>Please restart a new [Ref /_edit/$N edit]
-	and merge your version,	which is shown in full below.</italic></p>
+	<p><i>Please restart a new [Ref /_edit/$N edit]
+	and merge your version,	which is shown in full below.</i></p>
 	<p>Got '$O' expected '$X'</p>
 	<hr size=1 />
 	<p><pre>[armour $C]</pre></p>
@@ -361,10 +360,10 @@ namespace eval WikitWub {
 		    break
 		}
 		
-		set lastDay $day
 		if {$lastDay} {
 		    lappend results </ul>
 		}
+		set lastDay $day
 		lappend results [<p> [<b> [clock format $date -gmt 1 -format {%B %e, %Y}]]]
 		lappend results <ul>
 	    }
@@ -376,7 +375,7 @@ namespace eval WikitWub {
 	    
 	    lappend results [<li> $result]
 	}
-	lappend result </ul>
+	lappend results </ul>
 
 	if {$count > 100 && $date < $threshold} {
 	    lappend results [<p> "Older entries omitted..."]
@@ -624,7 +623,7 @@ namespace eval WikitWub {
 		    return [Http NoCache [Http Ok $r $C text/plain]]
 		}
 		default {
-		    set Title "<h1>Difference between version $V and $D for [Ref $N]</h1>"
+		    set Title "Difference between version $V and $D for [Ref $N]"
 		    set name "Difference between version $V and $D for $pname"
 		    if { $W } {
 			set C [::Wikit::ShowDiffs $C]
@@ -633,7 +632,7 @@ namespace eval WikitWub {
 		    }
 		    set tC "<span class='newwikiline'>Text added in version $V is highlighted like this</span>, <span class='oldwikiline'>text deleted from version $D is highlighted like this</span>"
 		    if {!$W} { append tC ", <span class='whitespacediff'>text with only white-space differences is highlighted like this</span>" }
-		    set C "$tC<hr><p>$C"
+		    set C "$tC<hr>$C"
 		}
 	    }
 	}
@@ -735,7 +734,10 @@ namespace eval WikitWub {
 	    return [Http NotFound $r]
 	}
 
-	set result "<h2>Change history of [Ref $N]</h2>"
+	set name "Change history of [mk::get wdb.pages!$N name]"
+	set Title "Change history of [Ref $N]"
+
+	set C ""
 	set links ""
 	set nver [expr {1 + [mk::view size wdb.pages!$N.changes]}]
 	if {$S > 0} {
@@ -753,75 +755,77 @@ namespace eval WikitWub {
 	    append links [<a> href $N?S=$nstart&L=$L "Next $L"]
 	}
 	if {$links ne {}} {
-	    append result <p> $links </p> \n
+	    append C <p> $links </p> \n
 	}
 	if {[catch {Wikit::ListPageVersionsDB wdb $N $L $S} versions]} {
-	    append result <pre> $versions </pre>
+	    append C <pre> $versions </pre>
 	} else {
 	    Wikit::pagevars $N name
-	    append result "<table class='history'>\n<tr>"
+	    append C "<table class='history'>\n<tr>"
 	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Line compare with} 3 {Word compare with} 3 Annotated 1 WikiText 1} {
-		append result [<th> colspan $span $column]
+		append C [<th> colspan $span $column]
 	    }
-	    append result </tr>\n
+	    append C </tr>\n
 	    foreach row $versions {
 		lassign $row vn date who
 		set prev [expr {$vn-1}]
 		set next [expr {$vn+1}]
 		set curr [expr {$nver-1}]
-		append result <tr>
-		append result [<td> [<a> href /_revision/$N?V=$vn rel nofollow $vn]]
-		append result [<td> [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]]
-		append result [<td> $who]
+		append C <tr>
+		append C [<td> [<a> href /_revision/$N?V=$vn rel nofollow $vn]]
+		append C [<td> [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]]
+		append C [<td> $who]
 
 		if { $prev >= 0 } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev#diff0 "$prev"]]
+		    append C [<td> [<a> href /_diff/$N?V=$vn&D=$prev#diff0 "$prev"]]
 		} else {
-		    append result <td></td>
+		    append C <td></td>
 		}
 		if { $next < $nver } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$next#diff0 "$next"]]
+		    append C [<td> [<a> href /_diff/$N?V=$vn&D=$next#diff0 "$next"]]
 		} else {
-		    append result <td></td>
+		    append C <td></td>
 		}
 		if { $vn != $curr } {
-		    append result [<td> [<a> href /_diff/$N?V=$curr&D=$vn#diff0 "Current"]]		
+		    append C [<td> [<a> href /_diff/$N?V=$curr&D=$vn#diff0 "Current"]]		
 		} else {
-		    append result <td></td>
+		    append C <td></td>
 		}
 
 		if { $prev >= 0 } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$prev&W=1#diff0 "$prev"]]
+		    append C [<td> [<a> href /_diff/$N?V=$vn&D=$prev&W=1#diff0 "$prev"]]
 		} else {
-		    append result <td></td>
+		    append C <td></td>
 		}
 		if { $next < $nver } {
-		    append result [<td> [<a> href /_diff/$N?V=$vn&D=$next&W=1#diff0 "$next"]]
+		    append C [<td> [<a> href /_diff/$N?V=$vn&D=$next&W=1#diff0 "$next"]]
 		} else {
-		    append result <td></td>
+		    append C <td></td>
 		}
 		if { $vn != $curr } {
-		    append result [<td> [<a> href /_diff/$N?V=$curr&D=$vn&W=1#diff0 "Current"]]		
+		    append C [<td> [<a> href /_diff/$N?V=$curr&D=$vn&W=1#diff0 "Current"]]		
 		} else {
-		    append result <td></td>
+		    append C <td></td>
 		}
 
-		append result [<td> [<a> href /_revision/$N?V=$vn&A=1 $vn]]
-		append result [<td> [<a> href /_revision/$N.txt?V=$vn $vn]]
-		append result </tr> \n
+		append C [<td> [<a> href /_revision/$N?V=$vn&A=1 $vn]]
+		append C [<td> [<a> href /_revision/$N.txt?V=$vn $vn]]
+		append C </tr> \n
 	    }
-	    append result </table> \n
+	    append C </table> \n
 	}
-	append result <p> $links </p> \n
+	if {$links ne {}} {
+	    append C <p> $links </p> \n
+	}
 
 	variable protected
 	variable menus
+	variable pageT
 	set menu {}
 	foreach m {Search Changes About Home} {
 	    lappend menu $menus($protected($m))
 	}
-	append result [<p> id footer [join $menu { - }]]
-	return [Http NoCache [Http Ok $r $result]]
+	return [Http NoCache [Http Ok $r [subst $pageT] x-text/system]]
     }
 
     # Ref - utility proc to generate an <A> from a page id
@@ -1124,13 +1128,13 @@ namespace eval WikitWub {
 	variable edit; set result [subst $edit]
 	
 	if {$date != 0} {
-	    append result "<italic>Last saved on <bold>[clock format $date -gmt 1 -format {%e %b %Y, %R GMT}]</bold></italic>"
+	    append result "<i>Last saved on <b>[clock format $date -gmt 1 -format {%e %b %Y, %R GMT}]</b></i>"
 	}
 	if {$who_nick ne ""} {
-	    append result "<italic> by <bold>$who_nick</bold></italic>"
+	    append result "<i> by <b>$who_nick</b></i>"
 	}
 	if {$nick ne ""} {
-	    append result " (you are: <bold>$nick</bold>)"
+	    append result " (you are: <b>$nick</b>)"
 	}
 
 	return [Http NoCache [Http Ok $r $result x-text/system]]
@@ -1332,7 +1336,7 @@ namespace eval WikitWub {
 		    set C [::Wikit::TextToStream $C]
 		    lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U
 		    if { $nqdate } {
-			append C "<p><a href='/_search?S=[armour $term]&F=$nqdate'>More search results...</a></p>"
+			append C "<p><a href='/_search?S=[armour $term]&amp;F=$nqdate'>More search results...</a></p>"
 		    }
 		} else {
 		    # send a search page
@@ -1438,7 +1442,7 @@ namespace eval WikitWub {
 	    }
 	}
 
-	set Title "<h1 class='title'>$Title</h1>"
+	#set Title "<h1 class='title'>$Title</h1>"
 	if {0} {
 	    # get the page title
 	    if {![regsub {^<p>(<img src=".*?")>} $C [Ref 0 $backRef] C]} {

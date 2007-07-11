@@ -1369,37 +1369,37 @@ namespace eval Wikit::Format {
   vs BLS BLS                   \n ;vs BLS BLE                   \n
   vs BLE BLS                   \n ;vs BLE BLE                   \n
 
-  vs T   L   "</p><p><table class=wikit_options><tr>" ;vs T   TR   "</p><p><table class=wikit_table><tr>" ;
-  vs Q   L "</pre><p><table class=wikit_options><tr>" ;vs Q   TR "</pre><p><table class=wikit_table><tr>" ;
-  vs U   L  "</ul><p><table class=wikit_options><tr>" ;vs U   TR  "</ul><p><table class=wikit_table><tr>" ;
-  vs O   L  "</ol><p><table class=wikit_options><tr>" ;vs O   TR  "</ol><p><table class=wikit_table><tr>" ;
-  vs I   L  "</dl><p><table class=wikit_options><tr>" ;vs I   TR  "</dl><p><table class=wikit_table><tr>" ;
-  vs D   L  "</dl><p><table class=wikit_options><tr>" ;vs D   TR  "</dl><p><table class=wikit_table><tr>" ;
-  vs H   L       "<p><table class=wikit_options><tr>" ;vs H   TR       "<p><table class=wikit_table><tr>" ;
-  vs TDE L                                "</tr><tr>" ;vs TDE TR                              "</tr><tr>" ;
-  vs FE  L "</pre><p><table class=wikit_options><tr>" ;vs FE  TR "</pre><p><table class=wikit_table><tr>" ;
-  vs FI  L       "<p><table class=wikit_options><tr>" ;vs FI  TR       "<p><table class=wikit_table><tr>" ;
-  vs L   L                                     "<tr>" ;vs L   TR                                   "<tr>" ;
-  vs HD2 L  "</h2><p><table class=wikit_options><tr>" ;vs HD2 TR  "</h2><p><table class=wikit_table><tr>" ;
-  vs HD3 L  "</h3><p><table class=wikit_options><tr>" ;vs HD3 TR  "</h3><p><table class=wikit_table><tr>" ;
-  vs HD4 L  "</h4><p><table class=wikit_options><tr>" ;vs HD4 TR  "</h4><p><table class=wikit_table><tr>" ;
-  vs BLS L     "\n<p><table class=wikit_options><tr>" ;vs BLS TR     "\n<p><table class=wikit_table><tr>" ;
-  vs BLE L     "\n<p><table class=wikit_options><tr>" ;vs BLE TR     "\n<p><table class=wikit_table><tr>" ;
+  vs T   L   "</p><table class=wikit_options><tr>" ;vs T   TR   "</p><table class=wikit_table><tr>" ;
+  vs Q   L "</pre><table class=wikit_options><tr>" ;vs Q   TR "</pre><table class=wikit_table><tr>" ;
+  vs U   L  "</ul><table class=wikit_options><tr>" ;vs U   TR  "</ul><table class=wikit_table><tr>" ;
+  vs O   L  "</ol><table class=wikit_options><tr>" ;vs O   TR  "</ol><table class=wikit_table><tr>" ;
+  vs I   L  "</dl><table class=wikit_options><tr>" ;vs I   TR  "</dl><table class=wikit_table><tr>" ;
+  vs D   L  "</dl><table class=wikit_options><tr>" ;vs D   TR  "</dl><table class=wikit_table><tr>" ;
+  vs H   L       "<table class=wikit_options><tr>" ;vs H   TR       "<table class=wikit_table><tr>" ;
+  vs TDE L                             "</tr><tr>" ;vs TDE TR                           "</tr><tr>" ;
+  vs FE  L "</pre><table class=wikit_options><tr>" ;vs FE  TR "</pre><table class=wikit_table><tr>" ;
+  vs FI  L       "<table class=wikit_options><tr>" ;vs FI  TR       "<table class=wikit_table><tr>" ;
+  vs L   L                                  "<tr>" ;vs L   TR                                "<tr>" ;
+  vs HD2 L  "</h2><table class=wikit_options><tr>" ;vs HD2 TR  "</h2><table class=wikit_table><tr>" ;
+  vs HD3 L  "</h3><table class=wikit_options><tr>" ;vs HD3 TR  "</h3><table class=wikit_table><tr>" ;
+  vs HD4 L  "</h4><table class=wikit_options><tr>" ;vs HD4 TR  "</h4><table class=wikit_table><tr>" ;
+  vs BLS L     "\n<table class=wikit_options><tr>" ;vs BLS TR     "\n<table class=wikit_table><tr>" ;
+  vs BLE L     "\n<table class=wikit_options><tr>" ;vs BLE TR     "\n<table class=wikit_table><tr>" ;
 
-  vs T   FI               </p><p><pre> ;vs T   FE               </p> ;
-  vs Q   FI             </pre><p><pre> ;vs Q   FE             </pre> ;
-  vs U   FI              </ul><p><pre> ;vs U   FE              </ul> ;
-  vs O   FI              </ol><p><pre> ;vs O   FE              </ol> ;
-  vs I   FI              </dl><p><pre> ;vs I   FE              </dl> ;
-  vs D   FI              </dl><p><pre> ;vs D   FE              </dl> ;
-  vs H   FI                   <p><pre> ;vs H   FE                 {} ;
-  vs TDE FI      </tr></table><p><pre> ;vs TDE FE      </tr></table> ;
-  vs FE  FI             </pre><p><pre> ;vs FE  FE             </pre> ;
-  vs FI  FI                   <p><pre> ;vs FI  FE                 {} ;
-  vs L   FI           </table><p><pre> ;vs L   FE           </table> ;
-  vs HD2 FI              </h2><p><pre> ;vs HD2 FE              </h2> ;
-  vs HD3 FI              </h3><p><pre> ;vs HD3 FE              </h3> ;
-  vs HD4 FI              </h4><p><pre> ;vs HD4 FE              </h4> ;
+  vs T   FI               </p><pre> ;vs T   FE               </p> ;
+  vs Q   FI             </pre><pre> ;vs Q   FE             </pre> ;
+  vs U   FI              </ul><pre> ;vs U   FE              </ul> ;
+  vs O   FI              </ol><pre> ;vs O   FE              </ol> ;
+  vs I   FI              </dl><pre> ;vs I   FE              </dl> ;
+  vs D   FI              </dl><pre> ;vs D   FE              </dl> ;
+  vs H   FI                   <pre> ;vs H   FE                 {} ;
+  vs TDE FI      </tr></table><pre> ;vs TDE FE      </tr></table> ;
+  vs FE  FI             </pre><pre> ;vs FE  FE             </pre> ;
+  vs FI  FI                   <pre> ;vs FI  FE                 {} ;
+  vs L   FI           </table><pre> ;vs L   FE           </table> ;
+  vs HD2 FI              </h2><pre> ;vs HD2 FE              </h2> ;
+  vs HD3 FI              </h3><pre> ;vs HD3 FE              </h3> ;
+  vs HD4 FI              </h4><pre> ;vs HD4 FE              </h4> ;
   vs BLS FI                 \n<pre> ;vs BLS FE                 \n ;
   vs BLE FI                 \n<pre> ;vs BLE FE                 \n ;
 
