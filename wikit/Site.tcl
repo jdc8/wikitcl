@@ -7,18 +7,18 @@ package require Mk4tcl
 foreach {name val} {
     listener_port 8080
     base "/tmp/wiki"
-    overwrite 0
-    profile 0
-    prime {}
     globaldocroot 0
     backends 5
-    readonly 0
-    wikidb wikit.tkd
-    upflag ""
     wubdir "../../Wub/"
-    history history
-    utf8 0
     cmdport 8082
+    overwrite 0
+
+    wikidb wikit.tkd
+    history history
+    readonly 0
+    prime 0
+    utf8 0
+    upflag ""
 } {
     set $name $val
 }
@@ -29,12 +29,6 @@ catch {
 }
 foreach {name val} $argv {
     set $name $val	;# set global config vars
-}
-
-if {$profile} {
-    # run the profiler if required
-    set profv [package require profiler]
-    puts stderr "Profiler: $profv"
 }
 
 # env handling - remove the linked env
@@ -52,11 +46,21 @@ if {[info exists starkit::topdir]} {
     set drdir [file join $topdir docroot]
 } else {
     # unpacked startup
+    lappend auto_path $home
+
+    # find Wub stuff
     set topdir [file normalize $wubdir]
-    foreach lib {Mime extensions Wub Domains stx Utilities} {
+    foreach lib {Mime extensions Wub Domains Utilities stx} {
 	lappend auto_path [file join $topdir $lib]
     }
-    lappend auto_path $home
+
+    # find docroot
+    if {$globaldocroot} {
+	set drdir [file join $topdir docroot]
+    } else {
+	set drdir [file join $home docroot]
+    }
+    #puts stderr "drdir:$drdir topdir:$topdir home:$home"
 }
 
 package require Listener
@@ -64,14 +68,7 @@ package require Httpd 2.0
 package require Http
 package require Debug 2.0
 
-if {![info exists starkit::topdir]} {
-    if {$globaldocroot} {
-	set drdir [file join $topdir docroot]
-    } else {
-	set drdir [file join $home docroot]
-    }
-    puts stderr "drdir:$drdir topdir:$topdir home:$home"
-}
+# Application Starts Here
 
 # create data and sessionroot dirs
 catch {file mkdir [set data [file join $base data]]}
@@ -136,23 +133,7 @@ Debug off cookies 10
 Debug off dispatch 10
 Debug off wikit 10
 
-set worker_args [list profile $profile wikidb $wikidb]
-
-if {$profile} {
-    ::profiler::init
-    ::profiler::suspend
-
-    proc profout {} {
-	::profiler::suspend
-	set result [::profiler::print]
-	::profiler::resume
-	return $result
-    }
-}
-
-if {$profile} {
-    ::profiler::resume
-}
+set worker_args [list wikidb $wikidb]
 
 set mkmutex [thread::mutex create]
 
@@ -165,7 +146,7 @@ package require Wikit::Db
 Wikit::WikiDatabase [file join $wikitroot $wikidb] wdb 1
 
 # prime wikit db if needed
-if {0 && [mk::view size wdb.pages] == 0} {
+if {$prime && [mk::view size wdb.pages] == 0} {
     # copy first 10 pages of the default datafile 
     set fd [open [file join $home doc wikidoc.tkd]]
     mk::file load wdb $fd
@@ -223,11 +204,11 @@ catch {
 # make the utf8 regular expression to save thread startup lag
 set utf8re [::utf8::makeUtf8Regexp]
 
-Debug.log {STARTING BACKENDS}
+Debug.log {STARTING BACKENDS [clock format [clock seconds]]}
 
 package require Backend
 set Backend::incr $backends	;# reduce the backend thread quantum for faster testing
-Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docroot $docroot wikitroot $wikitroot dataroot $data utf8re $utf8re mkmutex $mkmutex {*}$worker_args
+Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docroot $docroot wikitroot $wikitroot dataroot $data utf8re $utf8re mkmutex $mkmutex {*}$worker_args wubdir $topdir
 
 # start Listener
 set server_id "Wub [package present Httpd]" ;# name of this server
