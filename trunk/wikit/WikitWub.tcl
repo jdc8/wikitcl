@@ -65,7 +65,7 @@ namespace eval WikitWub {
 		[div header [<h1> class title $Title]]
 		[expr {[info exists ro]?$ro:""}]
 		[div {wrapper content} {$C}]
-		<hr noshade />
+		<hr noshade>
 		[div footer {
 		    [<p> [variable bullet; join $menu $bullet]]
 		    [searchF]
@@ -78,7 +78,7 @@ namespace eval WikitWub {
 	    [div container {
 		[div header [<h1> "References to [Ref $N]"]]
 		[div {wrapper content} {$C}]
-		<hr noshade />
+		<hr noshade>
 		[div footer {
 		    [<p> [variable bullet; join $menu $bullet]]
 		    [searchF]
@@ -148,9 +148,9 @@ namespace eval WikitWub {
 	    because the content your browser sent contains bogus characters.
 	    At character number $point.</p>
 	    <p><i>Please check your browser.</i></p>
-	    <hr size=1 />
+	    <hr size=1>
 	    <p><pre>[armour $C]</pre></p>
-	    <hr size=1 />
+	    <hr size=1>
 	}
 
 	search {} {
@@ -172,9 +172,9 @@ namespace eval WikitWub {
 	    }]]
 	    [<p> [<i> "Please restart a new [Ref /_edit/$N edit] and merge your version (which is shown in full below.)"]]
 	    [<p> "Got '$O' expected '$X'"]
-	    <hr size=1 />
+	    <hr size=1>
 	    [<p> [<pre> [armour $C]]]
-	    <hr size=1 />
+	    <hr size=1>
 	}
     } {
 	set templates($name) $template
