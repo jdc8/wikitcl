@@ -391,7 +391,7 @@ namespace eval WikitWub {
 	    append result [<a> href /$id $name]
 	    append result [<span> class dots ". . ."]
 	    append result [<span> class nick $who]
-	    append result [<a> class delta href "/_diff/$id#diff0 $delta"]
+	    append result [<a> class delta href /_diff/$id#diff0 $delta]
 
 	    lappend results [<li> $result]
 	}
