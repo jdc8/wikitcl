@@ -874,7 +874,7 @@ namespace eval WikitWub {
     foreach {n v} [array get protected] {
 	set protected($v) $n
 	variable bullet
-	set menus($v) [Ref $v $n class buttons]
+	set menus($v) [Ref $v $n]
     }
 
     set redir {meta: http-equiv='refresh' content='10;url=$url'
@@ -1426,12 +1426,12 @@ namespace eval WikitWub {
 	    1 {
 		set backRef /_ref/$N
 		set Refs "[Ref $backRef Reference] - "
-		set Title [Ref $backRef $name {title "click to see reference to this page"}]
+		set Title [Ref $backRef $name title "click to see reference to this page"]
 	    }
 	    default {
 		set backRef /_ref/$N
 		set Refs "[llength $refs] [Ref $backRef References]"
-		set Title [Ref $backRef $name {title "click to see [llength $refs] references to this page"}]
+		set Title [Ref $backRef $name title "click to see [llength $refs] references to this page"]
 		Debug.wikit {backrefs: backRef:'$backRef' Refs:'$Refs' Title:'$Title'} 10
 	    }
 	}
@@ -1454,13 +1454,13 @@ namespace eval WikitWub {
 	variable protected
 	if {![info exists protected($N)]} {
 	    if {!$::roflag} {
-		lappend menu [Ref /_edit/$N Edit class buttons]
-		lappend menu [Ref /_history/$N Revisions class buttons]
+		lappend menu [Ref /_edit/$N Edit]
+		lappend menu [Ref /_history/$N Revisions]
 	    }
 	}
 
 	variable menus
-	lappend menu "Go to [Ref 0 "" class buttons]"
+	lappend menu "Go to [Ref 0]"
 	foreach m {About Changes Help} {
 	    if {$N != $protected($m)} {
 		lappend menu $menus($protected($m))
