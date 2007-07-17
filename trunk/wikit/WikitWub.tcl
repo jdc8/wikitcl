@@ -62,7 +62,7 @@ namespace eval WikitWub {
 	page {$name} {
 	    <!-- standard page decoration -->
 	    [div container {
-		[div header [<h1> class title $Title]]
+		[div header [<h1> class title [tclarmour $Title]]]
 		[expr {[info exists ro]?$ro:""}]
 		[div {wrapper content} {[tclarmour $C]}]
 		<hr noshade>
