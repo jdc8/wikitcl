@@ -1654,11 +1654,12 @@ proc incoming {req} {
 		do images do $request
 	    }
 
+	    /css/*.css -
 	    /*.css {
 		# need to silently redirect css files
 		Debug.wikit {css invocation}
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -suffix $suffix
+		dict set request -suffix [file tail $suffix]
 		dict set request -prefix "/css"
 		do css do $request
 	    }
