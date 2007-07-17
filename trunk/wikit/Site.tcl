@@ -223,7 +223,6 @@ Debug.log {Site LOCAL: '$r' ($eo)}
 
 set done 0
 while {!$done} {
-    #puts stderr "Waiting at top level"
     vwait done
 }
 
