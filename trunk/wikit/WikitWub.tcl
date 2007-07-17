@@ -64,7 +64,7 @@ namespace eval WikitWub {
 	    [div container {
 		[div header [<h1> class title $Title]]
 		[expr {[info exists ro]?$ro:""}]
-		[div {wrapper content} {$C}]
+		[div {wrapper content} {[tclarmour $C]}]
 		<hr noshade>
 		[div footer {
 		    [<p> [variable bullet; join $menu $bullet]]
@@ -77,7 +77,7 @@ namespace eval WikitWub {
 	    <!-- page sent when constructing a reference page -->
 	    [div container {
 		[div header [<h1> "References to [Ref $N]"]]
-		[div {wrapper content} {$C}]
+		[div {wrapper content} {[tclarmour $C]}]
 		<hr noshade>
 		[div footer {
 		    [<p> [variable bullet; join $menu $bullet]]
@@ -94,7 +94,7 @@ namespace eval WikitWub {
 	     }]
 	     <form> edit method post action /_save/$N {
 		 [div header [<h1> "[Ref $N] $_submit"]]
-		 [<textarea> C rows 30 cols 72 style width:100% [list $C]]
+		 [<textarea> C rows 30 cols 72 style width:100% [list [tclarmour $C]]]
 		 [<hidden> O [list $date $who]]
 		 [<hidden> _charset_ {}]
 		 $_submit
