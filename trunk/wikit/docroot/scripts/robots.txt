@@ -1,2 +1,12 @@
 User-agent: *
 Disallow: /5
+Disallow: /references/
+Disallow: /_ref/
+Disallow: /_history/
+Disallow: /_revision/
+Disallow: /_diff/
+Disallow: /_search/
+Disallow: /_edit/
+Disallow: /edit/
+Disallow: /_tcl/
+Disallow: /_login/
