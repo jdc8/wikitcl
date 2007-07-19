@@ -1375,7 +1375,7 @@ namespace eval WikitWub {
 		    set C [::Wikit::TextToStream $C]
 		    lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U
 		    if { $nqdate } {
-			append C [<p> [<a> href "/_search?S=[armour $term]&F=$nqdate'" "More search results..."]]
+			append C [<p> [<a> href "/_search?S=[armour $term]&F=$nqdate" "More search results..."]]
 		    }
 		} else {
 		    # send a search page
