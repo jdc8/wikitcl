@@ -156,10 +156,15 @@ namespace eval WikitWub {
 
 	search {} {
 	    <!-- page sent in response to a search -->
-	    <form action='/_search' method='get'>
-	    <p>Enter the search phrase:<input name='S' type='text' $search> Append an asterisk (*) to search page contents as well</p>
-	    <input type='hidden' name='_charset_'>
-	    </form>
+	    [<form> search \
+		 method get \
+		 action /_search \
+		 {[<fieldset> sfield title "Construct a new search" {
+		     [<legend> "Enter a Search Phrase"]
+		     [<text> S title "Append an asterisk (*) to search page contents" %S]
+		     [<checkbox> SC title "search page contents" value 1; set _disabled ""]
+		     [<hidden> _charset_]}]
+		 }]
 	    $C
 	}
 
