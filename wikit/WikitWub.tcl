@@ -297,6 +297,20 @@ namespace eval WikitWub {
 		    content-type text/html]
     }
 
+    # generate site map
+    proc /sitemap.xml {r args} {
+	set p [Url host $r]
+	set map {}
+	append map [Sitemap location $p "" mtime [file mtime $::config(docroot)/html/welcome.html] changefreq weekly] \n
+	append map [Sitemap location $p 4 mtime [clock seconds] changefreq always priority 1.0] \n
+
+	foreach i [mk::select wdb.pages -first 11 -min date 1 -sort date] {
+	    append map [Sitemap location $p $i mtime [mk::get wdb.pages!$i date]] \n
+	}
+
+	return [Http NoCache [Http Ok $r [Sitemap sitemap $map] text/xml]]
+    }
+
     proc /state {r} {
 	set state [::thread::send $::thread::parent {Httpd state}]
 	set result "<table border='1'>\n"
@@ -1694,6 +1708,7 @@ proc incoming {req} {
 		do ::honeypot do $request
 	    }
 
+	    /sitemap.xml -
 	    /_motd -
 	    /_edit/* -
 	    /_save/* -
