@@ -16,6 +16,7 @@ package require struct::queue
 package require Http
 package require Cookies
 package require WikitRss
+package require Sitemap
 package require stx
 
 package require Honeypot
@@ -298,8 +299,8 @@ namespace eval WikitWub {
     }
 
     # generate site map
-    proc /sitemap.xml {r args} {
-	set p [Url host $r]
+    proc /sitemap {r args} {
+	set p http://[Url host $r]/
 	set map {}
 	append map [Sitemap location $p "" mtime [file mtime $::config(docroot)/html/welcome.html] changefreq weekly] \n
 	append map [Sitemap location $p 4 mtime [clock seconds] changefreq always priority 1.0] \n
@@ -1708,7 +1709,6 @@ proc incoming {req} {
 		do ::honeypot do $request
 	    }
 
-	    /_sitemap.xml -
 	    /_motd -
 	    /_edit/* -
 	    /_save/* -
@@ -1721,6 +1721,7 @@ proc incoming {req} {
 	    /_search -
 	    /_activity -
 	    /_state -
+	    /_sitemap -
 	    /_login {
 		# These are wiki-local restful command URLs,
 		# we process them via the wikit Direct domain
