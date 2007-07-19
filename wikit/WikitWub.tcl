@@ -1708,7 +1708,7 @@ proc incoming {req} {
 		do ::honeypot do $request
 	    }
 
-	    /sitemap.xml -
+	    /_sitemap.xml -
 	    /_motd -
 	    /_edit/* -
 	    /_save/* -
