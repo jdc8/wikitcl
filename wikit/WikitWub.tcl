@@ -121,7 +121,7 @@ namespace eval WikitWub {
 	    <b>SECTIONS</b> can be separated with a horizontal line - insert a line containing just 4 dashes
 	    </font></blockquote><hr size=1>
 	    [If {$date != 0} {
-		[<i> "Last saved on [<b> [clock format $date -gmt 1 -format {%e %b %Y, %R GMT}]]"]
+		[<i> "Last saved on [<b> [clock format $date -gmt 1 -format {%Y-%m-%d %T}]]"]
 	    }]
 	    [If {$who_nick ne ""} {
 		[<i> "by [<b> $who_nick]"]
@@ -404,7 +404,7 @@ namespace eval WikitWub {
 		    lappend results </ul>
 		}
 		set lastDay $day
-		lappend results [<p> [<b> [clock format $date -gmt 1 -format {%B %e, %Y}]]]
+		lappend results [<p> [<b> [clock format $date -gmt 1 -format {%Y-%m-%d}]]]
 		lappend results <ul>
 	    }
 
@@ -449,7 +449,7 @@ namespace eval WikitWub {
 		    lappend results </ul>
 		}
 		set lastDay $day
-		lappend results [<p> [<b> [clock format $date -gmt 1 -format {%B %e, %Y}]]]
+		lappend results [<p> [<b> [clock format $date -gmt 1 -format {%Y-%m-%d}]]]
 		lappend results <ul>
 	    }
 
@@ -460,6 +460,8 @@ namespace eval WikitWub {
 	    }
 	    append link [<span> class dots ". . ."]
 	    append link [<span> class nick $who]
+	    append link [<span> class dots ". . ."]
+	    append link [<span> class nick [clock format $date -gmt 1 -format %T]]
 	    append link [<span> class dots ". . ."]
 	    append link [<a> class delta href /_history/$id history]
 	    lappend results [<li> $link]
@@ -494,7 +496,7 @@ namespace eval WikitWub {
 		    if { $prevVersion != -1 } {
 			append C "\n<<<<<<"
 		    }
-		    append C "\n>>>>>>a;$N;$lineVersion;$who;" [clock format $time -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]
+		    append C "\n>>>>>>a;$N;$lineVersion;$who;" [clock format $time -format "%Y-%m-%d %T" -gmt true]
 		    set prevVersion $lineVersion
 		}
 		append C "\n$line"
@@ -822,7 +824,7 @@ namespace eval WikitWub {
 		set curr [expr {$nver-1}]
 		append C <tr>
 		append C [<td> [<a> href /_revision/$N?V=$vn rel nofollow $vn]]
-		append C [<td> [clock format $date -format "%Y-%m-%d %H:%M:%S UTC" -gmt true]]
+		append C [<td> [clock format $date -format "%Y-%m-%d %T" -gmt true]]
 		append C [<td> $who]
 
 		if { $prev >= 0 } {
@@ -1461,7 +1463,7 @@ namespace eval WikitWub {
 	# arrange the page's tail
 	set updated ""
 	if {$date != 0} {
-	    set update [clock format $date -gmt 1 -format {%e %b %Y, %R GMT}]
+	    set update [clock format $date -gmt 1 -format {%Y-%m-%d %T}]
 	    set updated "Updated $update"
 	}
 
