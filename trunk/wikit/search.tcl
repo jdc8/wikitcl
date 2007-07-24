@@ -31,7 +31,7 @@ namespace eval Wikit {
   
   proc GetTimeStamp {{t ""}} {
     if {$t == ""} { set t [clock seconds] }
-    clock format $t -gmt 1 -format {%Y/%m/%d %T}
+    clock format $t -gmt 1 -format {%Y-%m-%d %T}
   }
   
   proc SearchResults {rows {db wdb}} {
