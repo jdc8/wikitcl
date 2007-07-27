@@ -65,7 +65,7 @@ namespace eval WikitRss {
     # See the lines I've commented out for alternate formats.
 
     proc item {Title Time Author Url} {
-	set time [clock format $Time -format "%a, %d %b %Y %H:%M:%S GMT" -gmt 1]
+	set time [clock format $Time -format "%a, %d %b %Y %T GMT" -gmt 1]
 	return "<item>
 		<title>[htmlQuote $Title]</title>
 		<link>$Url</link>
