@@ -72,7 +72,7 @@ namespace eval WikitWub {
 	page {$name} {
 	    <!-- standard page decoration -->
 	    [div container {
-		[div header [<h1> class title [tclarmour $Title]]]
+		[div header {[<h1> class title [armour $Title]]}]
 		[expr {[info exists ro]?$ro:""}]
 		[div {wrapper content} {[tclarmour $C]}]
 		<hr noshade>
@@ -86,7 +86,7 @@ namespace eval WikitWub {
 	refs {References to $N} {
 	    <!-- page sent when constructing a reference page -->
 	    [div container {
-		[div header [<h1> "References to [Ref $N]"]]
+		[div header {[<h1> "References to [Ref $N]"]}]
 		[div {wrapper content} {[tclarmour $C]}]
 		<hr noshade>
 		[div footer {
@@ -103,7 +103,7 @@ namespace eval WikitWub {
 		 [<img> src /tick.png alt ""] Save
 	     }]
 	     <form> edit method post action /_save/$N {
-		 [div header [<h1> [tclarmour "[Ref $N] $_submit"]]]
+		 [div header {[<h1> [tclarmour "[Ref $N] $_submit"]]}]
 		 [<textarea> C rows 30 cols 72 style width:100% [list [tclarmour $C]]]
 		 [<hidden> O [list [tclarmour $date] [tclarmour $who]]]
 		 [<hidden> _charset_ {}]
@@ -910,7 +910,7 @@ namespace eval WikitWub {
 		set name $page
 	    }
 	}
-	return [<a> href /[string trimleft $url /] {*}$args [armour $name]]
+	return [<a> href /[string trimleft $url /] {*}$args [htmlarmour [armour $name]]]
     }
 
     variable protected
