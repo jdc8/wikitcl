@@ -35,7 +35,7 @@ foreach {name val} $argv {
 array set _env [array get ::env]; unset ::env
 array set ::env [array get _env]; unset _env
 
-package require snit 2.0
+#package require snit 2.0
 
 # set up home directory relative to script
 set home [file normalize [file dirname [info script]]]
@@ -64,7 +64,7 @@ if {[info exists starkit::topdir]} {
 }
 
 package require Listener
-package require Httpd 2.0
+package require HttpdThread
 package require Http
 package require Debug 2.0
 
@@ -211,12 +211,12 @@ set Backend::incr $backends	;# reduce the backend thread quantum for faster test
 Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docroot $docroot wikitroot $wikitroot dataroot $data utf8re $utf8re mkmutex $mkmutex {*}$worker_args wubdir $topdir
 
 # start Listener
-set server_id "Wub [package present Httpd]" ;# name of this server
+set ::Httpd::server_id "Wub [package present Httpd]" ;# name of this server
 if {[info exists server_port]} {
     # the listener and server ports differ
     set ::Httpd::server_port $server_port
 }
-set listener [Listener %AUTO% -server $server_id -host $host -port $listener_port -sockets Httpd -httpd {-dispatch "Backend incoming"}]
+Listener listen -host $host -port $listener_port -sockets Httpd -dispatch "Backend incoming"
 
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
 Debug.log {Site LOCAL: '$r' ($eo)}
