@@ -46,6 +46,15 @@ namespace eval WikitWub {
     variable templates
     variable titles
 
+    # sortable - include javascripts and CSS for sortable table.
+    proc sortable {r} {
+	foreach js {common css standardista-table-sorting} {
+	    dict lappend r -headers [<script> type text/javascript src /$js.js {}]
+	}
+	dict lappend r -headers [<style> type text/css media all "@import url(/sorttable.css);"]
+	return $r
+    }
+
     proc <P> {args} {
 	puts stderr "<P> $args"
 	return [<p> {*}$args]
@@ -94,9 +103,9 @@ namespace eval WikitWub {
 		 [<img> src /tick.png alt ""] Save
 	     }]
 	     <form> edit method post action /_save/$N {
-		 [div header [<h1> "[Ref $N] $_submit"]]
+		 [div header [<h1> [tclarmour "[Ref $N] $_submit"]]]
 		 [<textarea> C rows 30 cols 72 style width:100% [list [tclarmour $C]]]
-		 [<hidden> O [list $date $who]]
+		 [<hidden> O [list [tclarmour $date] [tclarmour $who]]]
 		 [<hidden> _charset_ {}]
 		 $_submit
 	     }]
@@ -161,7 +170,7 @@ namespace eval WikitWub {
 		 action /_search \
 		 {[<fieldset> sfield title "Construct a new search" {
 		     [<legend> "Enter a Search Phrase"]
-		     [<text> S title "Append an asterisk (*) to search page contents" %S]
+		     [<text> S title "Append an asterisk (*) to search page contents" [tclarmour %S]]
 		     [<checkbox> SC title "search page contents" value 1; set _disabled ""]
 		     [<hidden> _charset_]}]
 		 }]
@@ -207,7 +216,7 @@ namespace eval WikitWub {
     variable searchForm [string map {%S $search} [<form> search action /_search {
 	[<fieldset> sfield title "Construct a new search" {
 	    [<legend> "Enter a Search Phrase"]
-	    [<text> S title "Append an asterisk (*) to search page contents" %S]
+	    [<text> S title "Append an asterisk (*) to search page contents" [tclarmour %S]]
 	    [<checkbox> SC title "search page contents" value 1; set _disabled ""]
 	    [<hidden> _charset_]
 	}]
@@ -318,13 +327,16 @@ namespace eval WikitWub {
     }
 
     proc /state {r} {
-	set state [::thread::send $::thread::parent {Httpd state}]
-	set result "<table border='1'>\n"
-	append result <tr><th> [join {socket thread backend ip conflict start end log} </th><th>] </th></tr> \n
-	foreach row $state {
-	    append result <tr><td> [join $row </td><td>] </td></tr> \n
-	}
-	append result </table> \n
+	set state [SParent Activity state]
+	set result [<table> class sortable [subst {
+	    [<thead> [<tr> [<th> [join {cid socket thread backend ip start end log} </th><th>]]]]
+	    [Foreach row $state {
+		[<tbody> [<tr> [<td> [join $row </td><td>]]]]
+	    }]
+	}]]
+
+	set r [sortable $r]	;# include the sortable js
+	dict set r content-type x-text/wiki
 
 	return [Http NoCache [Http Ok $r $result]]
     }
@@ -332,9 +344,13 @@ namespace eval WikitWub {
     proc /activity {r {L "current"} {F "html"} args} {
 	# generate an activity page
 	if {$L eq "log"} {
-	    set act [::thread::send $::thread::parent {Httpd activity_log}]
+	    set act [SParent Activity log]
+	    set title "Activity Log"
+	    set alt [<a> href "/_activity?L=current" "Current Activity"]
 	} else {
-	    set act [::thread::send $::thread::parent {Httpd activity_current}]
+	    set act [SParent Activity current]
+	    set title "Current Activity"
+	    set alt [<a> href "/_activity?L=log" "Activity Log"]
 	}
 
 	switch -- $F {
@@ -348,13 +364,19 @@ namespace eval WikitWub {
 
 	    html -
 	    default {
-		set result "<table border='1'>\n"
-		dict set r content-type text/html
-		append result <tr><th> [join [lindex $act 0] </th>\n<th>] </th></tr> \n
-		foreach a [lrange $act 1 end] {
-		    append result <tr><td> [join $a </td>\n<td>] </td></tr> \n
-		}
-		append result </table>
+		set table [<table> class sortable [subst {
+		    [<thead> [<tr> [Foreach t [lindex $act 0] {
+			[<th> [string totitle $t]]
+		    }]]]
+		    [<tbody> [Foreach a [lrange $act 1 end] {
+			[<tr> class [If {[incr row] % 2} even else odd] \
+			     [<td> [join $a </td>\n<td>]]]
+		    }]]
+		}]]
+		set result "[<h1> $title]$table[<p> $alt]"
+
+		set r [sortable $r]	;# include the sortable js
+		dict set r content-type x-text/wiki
 	    }
 	}
 
@@ -408,7 +430,7 @@ namespace eval WikitWub {
 		lappend results <ul>
 	    }
 
-	    append result [<a> href /$id $name]
+	    append result [<a> href /$id [armour $name]]
 	    append result [<span> class dots ". . ."]
 	    append result [<span> class nick $who]
 	    append result [<span> class dots ". . ."]
@@ -664,7 +686,7 @@ namespace eval WikitWub {
 		    return [Http NoCache [Http Ok $r $C text/plain]]
 		}
 		.tk {
-		    set Title "<h1>Difference between version $V and $D for [Ref $N]</h1>"
+		    set Title [<h1> "Difference between version $V and $D for [Ref $N]"]
 		    set name "Difference between version $V and $D for $pname"
 		    set C [::Wikit::TextToStream $C]
 		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
@@ -748,7 +770,7 @@ namespace eval WikitWub {
 			    set Title [<h1> "Annotated version $V of [Ref $N]"]
 			    set name "Annotated version $V of $pname"
 			} else {
-			    set Title "<h1>Version $V of [Ref $N]</h1>"
+			    set Title [<h1> "Version $V of [Ref $N]"]
 			    set name "Version $V of $pname"
 			}
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
@@ -888,7 +910,7 @@ namespace eval WikitWub {
 		set name $page
 	    }
 	}
-	return [<a> href /[string trimleft $url /] {*}$args $name]
+	return [<a> href /[string trimleft $url /] {*}$args [armour $name]]
     }
 
     variable protected
@@ -977,7 +999,7 @@ namespace eval WikitWub {
 
     proc invalidate {r url} {
 	Debug.wikit {invalidating $url} 3
-	::thread::send -async $::thread::parent [list Cache delete http://[dict get $r host]/$url]
+	Parent Cache delete http://[dict get $r host]/$url
     }
 
     proc locate {page {exact 1}} {
@@ -1032,8 +1054,8 @@ namespace eval WikitWub {
 	}
 
 	Debug.wikit {/search: '$S'}
-	dict set request -suffix $S
 	dict set request -prefix "/$S"
+	dict set request -suffix $S
 
 	set ::Wikit::searchLong [regexp {^(.*)\*$} $S x ::Wikit::searchKey]
 	return [WikitWub do $r 2]
@@ -1226,10 +1248,7 @@ namespace eval WikitWub {
 	set C [Html dict2table $rd {Date Name Who}]
 
 	# include javascripts and CSS for sortable table.
-	foreach js {common css standardista-table-sorting} {
-	    dict lappend r -headers [<script> type text/javascript src /$js.js {}]
-	}
-	dict lappend r -headers [<style> type text/css media all "@import url(/sorttable.css);"]
+	set r [sortable $r]
 
 	variable protected
 	variable menus
@@ -1526,29 +1545,6 @@ if {$roflag} {
     }
 }
 
-proc do {args} {
-    variable response
-    variable request
-    set code [catch {{*}$args} r eo]
-    switch -- $code {
-	1 {
-	    set response [Http ServerError $request $r $eo]
-	    return 1
-	}
-	default {
-	    set response $r
-	    if {$code == 0} {
-		set code 200
-	    }
-	    if {![dict exists $response -code]} {
-		dict set response -code $code
-	    }
-	    Debug.wikit {Response code: $code / [dict get $response -code]}
-	    return 0
-	}
-    }
-}
-
 Direct wikit -namespace ::WikitWub -ctype "x-text/wiki"
 Convert convert -conversions 1 -namespace ::WikitWub
 
@@ -1563,14 +1559,35 @@ catch {
     set ::WikitWub::motd [::fileutil::cat [file join $config(docroot) motd]]
 }
 
+proc Parent {args} {
+    ::thread::send -async $::thread::parent $args
+}
+
+proc SParent {args} {
+    return [::thread::send $::thread::parent $args]
+}
+
+proc Worker {req args} {
+    ::thread::send -async [dict get $req -worker] $args
+}
+
+proc Send {rsp args} {
+    set rsp [dict merge $rsp $args]
+    if {[dict exists $rsp -worker]} {
+	::thread::send -async [dict get $rsp -worker] [list HttpdWorker Send $rsp]
+    } else {
+	HttpdWorker Send $rsp
+    }
+}
+
 # disconnected - courtesy indication
 # we've been disconnected
 proc Disconnected {args} {
     # we're pretty well stateless
 }
 
-proc incoming {req} {
-    inQ put $req
+proc Incoming {req} {
+    inQ put $req	;# add the incoming request to the inQ
 
     # some code to detect races (we hope)
     set chans [chan names sock*]
@@ -1583,25 +1600,26 @@ proc incoming {req} {
 
     variable response
     variable request
-    while {([dict size $request] == 0)
-	   && ([catch {inQ get} req eo] == 0)
+    while {[dict size $request] == 0
+	   && [catch {inQ get} req eo] == 0
        } {
 	set request $req
 
-	set path [dict get $request -path]
 	dict set request -cookies [Cookies parse4server [Dict get? $request cookie]]
 
 	# get a plausible prefix/suffix split
-	Debug.wikit {incoming path: $path}
+	set path [dict get $request -path]
 	set suffix [file join {} {*}[lassign [file split $path] -> fn]]
-	dict set request -suffix $suffix
 	dict set request -prefix "/$fn"
-	Debug.wikit {invocation: fn:$fn suffix:$suffix}
+	dict set request -suffix $suffix
+	Debug.wikit {invocation: path:$path fn:$fn suffix:$suffix}
 
-	# check that this isn't a known bot
-	if {[dict exists $request -bot] && $path ne "/_captcha"} {
-	    Debug.wikit {Honeypot: it's a bot, and not /_captcha}
+	# a known bot may only access /_honeypot and /_captcha or their aliases
+	if {[dict exists $request -bot]
+	    && $path ne "/_captcha"
+	} {
 	    # Known bot: everything but /_captcha gets redirected to /_honeypot
+	    Debug.wikit {Honeypot: it's a bot, and not /_captcha}
 	    if {
 		$path eq "/$::WikitWub::protected(HoneyPot)"
 		|| $path eq "/_honeypot"
@@ -1609,29 +1627,27 @@ proc incoming {req} {
 		Debug.wikit {Honeypot: it's a bot, and going to /_honeypot}
 		set path /_honeypot
 		dict set request -prefix $path
-		dict set request -suffix _honeypot
+		dict set request -suffix "_honeypot"
 		set fn _honeypot
 	    } else {
 		# redirect everything else to /_honeypot
-		Debug.wikit {Honeypot: it's a bot, and we're redirecting to /_honeypot}
+		Debug.wikit {Honeypot: it's a bot, so we're redirecting to /_honeypot}
 		set url "http://[dict get $request host]/_honeypot"
-		set response [Http Relocated $request $url]
-		dict set response -transaction [dict get $request -transaction]
-		dict set response -generation [dict get $request -generation]
-		::thread::send -async [dict get $request -worker] [list send $response]
+		Send $response [Http Relocated $request $url]
 		set request [dict create]	;# go idle
 		continue	;# process next request
 	    }
-	} else {
+	} elseif {$path eq "/$::WikitWub::protected(HoneyPot)"
+		  || $path eq "/_honeypot"
+		  || [pest $req]
+	      } {
 	    # not a known bot, until it touches Honeypot
-	    if {$path eq "/$::WikitWub::protected(HoneyPot)" || [pest $req]} {
-		Debug.wikit {Honeypot: Triggered the Trap}
-		# silent redirect to /_honeypot
-		set path /_honeypot
-		dict set request -prefix $path
-		dict set request -suffix _honeypot
-		set fn _honeypot
-	    }
+	    Debug.wikit {Honeypot: Triggered the Trap}
+	    # silent redirect to /_honeypot
+	    set path /_honeypot
+	    dict set request -prefix $path
+	    dict set request -suffix "_honeypot"
+	    set fn _honeypot
 	}
 
 	switch -glob -- $path {
@@ -1639,19 +1655,12 @@ proc incoming {req} {
 	    /*.wmv -
 	    /*.exe -
 	    /cgi-bin/* {
-		set ip [dict get $request -ipaddr]
-		if {$ip eq "127.0.0.1"
-		    && [dict exists $request x-forwarded-for]
-		} {
-		    set ip [lindex [split [dict get $request x-forwarded-for] ,] 0]
-		}
-		thread::send -async $::thread::parent [list Httpd block $ip "Bogus URL"]
+		# block the originator by IP
+		Parent Block block [dict get $request -ipaddr] "Bogus URL"
 
 		# send the bot a 404
-		set response [Http NotFound $request]
-		dict set response -transaction [dict get $request -transaction]
-		dict set response -generation [dict get $request -generation]
-		::thread::send -async [dict get $request -worker] [list send $response]
+		Send $response [Http NotFound $request]
+
 		set request [dict create]	;# go idle
 		continue	;# process next request
 	    }
@@ -1663,19 +1672,19 @@ proc incoming {req} {
 		Debug.wikit {Wub Docco [file split $path] - [dict $request -url]}
 		set suffix [file join {} {*}[lrange [file split $path] 2 end]]
 		dict set request -suffix $suffix
-		do wub do $request
+		set response [Http process $request wub do $request]
 	    }
 
 	    /*.jpg -
 	    /*.gif -
 	    /*.png -
 	    /favicon.ico {
-		Debug.wikit {image invocation}
 		# need to silently redirect image files
+		Debug.wikit {image invocation}
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -suffix $suffix
 		dict set request -prefix "/images"
-		do images do $request
+		dict set request -suffix $suffix
+		set response [Http process $request images do $request]
 	    }
 
 	    /css/*.css -
@@ -1685,16 +1694,16 @@ proc incoming {req} {
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
 		dict set request -suffix [file tail $suffix]
 		dict set request -prefix "/css"
-		do css do $request
+		set response [Http process $request css do $request]
 	    }
 
 	    /*.gz {
 		# need to silently redirect gz files
 		Debug.wikit {bin invocation}
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -suffix $suffix
 		dict set request -prefix "/bin"
-		do bin do $request
+		dict set request -suffix $suffix
+		set response [Http process $request bin do $request]
 	    }
 
 	    /robots.txt -
@@ -1702,9 +1711,9 @@ proc incoming {req} {
 		# need to silently redirect js files
 		Debug.wikit {script invocation}
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -suffix $suffix
 		dict set request -prefix "/scripts"
-		do scripts do $request
+		dict set request -suffix $suffix
+		set response [Http process $request scripts do $request]
 	    }
 
 	    /_honeypot -
@@ -1713,7 +1722,7 @@ proc incoming {req} {
 		# or a known bot is being sent there.
 		Debug.wikit {honeypot $path - $fn}
 		dict set request -suffix [string trimleft $fn _]
-		do ::honeypot do $request
+		set response [Http process $request ::honeypot do $request]
 	    }
 
 	    /_motd -
@@ -1737,7 +1746,7 @@ proc incoming {req} {
 		set qd [Query add [Query parse $request] N $suffix]
 		dict set request -Query $qd
 		Debug.wikit {direct N: [Query value $qd N]}
-		do wikit do $request
+		set response [Http process $request wikit do $request]
 	    }
 
 	    /rss.xml {
@@ -1760,31 +1769,29 @@ proc incoming {req} {
 	    / {
 		# need to silently redirect welcome file
 		Debug.wikit {welcome invocation}
+		dict set request -prefix "/html"
 		dict set request -suffix welcome.html
-		dict set request -prefix /html
-		do html do $request
+		set response [Http process $request html do $request]
 	    }
 
 	    //// {
 		Debug.wikit {/ invocation}
 		dict set request -suffix 0
 		dict set request -Query [Query parse $request]
-		do WikitWub do $request 0
+		set response [Http process $request WikitWub do $request 0]
 	    }
 
 	    default {
 		Debug.wikit {default invocation}
 		dict set request -suffix $fn
 		dict set request -Query [Query parse $request]
-		do WikitWub do $request $fn
+		set response [Http process $request WikitWub do $request $fn]
 	    }
 	}
 
 	# send response
-	do convert do $response	;# convert page
-	dict set response -transaction [dict get $request -transaction]
-	dict set response -generation [dict get $request -generation]
-	::thread::send -async [dict get $request -worker] [list send $response]
+	set response [Http process $request convert do $response]	;# convert page
+	Send $response
 	set request [dict create]	;# go idle
     }
 }
@@ -1819,7 +1826,7 @@ Debug off cookies 10
 Debug off socket 10
 Debug on error 10
 
-Debug.error {RESTART: [clock format [clock second]]}
+Debug.log {RESTART: [clock format [clock second]]}
 
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
 Debug.log {LOCAL: '$r' ($eo)} 6
