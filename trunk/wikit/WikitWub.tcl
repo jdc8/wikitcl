@@ -1464,7 +1464,7 @@ namespace eval WikitWub {
 	    0 {
 		set backRef ""
 		set Refs ""
-		set Title $name
+		set Title [armour $name]
 	    }
 	    1 {
 		set backRef /_ref/$N
