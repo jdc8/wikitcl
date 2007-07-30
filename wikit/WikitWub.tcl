@@ -330,9 +330,9 @@ namespace eval WikitWub {
 	set state [SParent Activity state]
 	set result [<table> class sortable [subst {
 	    [<thead> [<tr> [<th> [join {cid socket thread backend ip start end log} </th><th>]]]]
-	    [Foreach row $state {
-		[<tbody> [<tr> [<td> [join $row </td><td>]]]]
-	    }]
+	    [<tbody> [Foreach row $state {
+		[<tr> [<td> [join $row </td><td>]]]
+	    }]]
 	}]]
 
 	set r [sortable $r]	;# include the sortable js
