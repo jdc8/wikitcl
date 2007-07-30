@@ -910,7 +910,7 @@ namespace eval WikitWub {
 		set name $page
 	    }
 	}
-	return [<a> href /[string trimleft $url /] {*}$args [htmlarmour [armour $name]]]
+	return [<a> href /[string trimleft $url /] {*}$args [armour $name]]
     }
 
     variable protected
