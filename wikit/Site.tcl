@@ -211,7 +211,9 @@ set Backend::incr $backends	;# reduce the backend thread quantum for faster test
 Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docroot $docroot wikitroot $wikitroot dataroot $data utf8re $utf8re mkmutex $mkmutex {*}$worker_args wubdir $topdir
 
 # start Listener
-set ::Httpd::server_id "Wub [package present Httpd]" ;# name of this server
+#set ::Httpd::server_id "Wub [package present Httpd]" ;# name of this server
+Httpd init server_id "Wub [package present Httpd]" max 2 incr 2 over 20
+
 if {[info exists server_port]} {
     # the listener and server ports differ
     set ::Httpd::server_port $server_port
