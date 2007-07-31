@@ -176,6 +176,19 @@ table.history td {
 	border: 1px dotted #0000cc;
 }
 
+table.wikit_table {
+	border-collapse: collapse;
+}
+
+table.wikit_table th {
+	background: #ffffcc;
+	border: 1px dotted #0000cc;
+}
+
+table.wikit_table td {
+	border: 1px dotted #0000cc;
+}
+
 div.annotated {
 	border-top: 1px dotted #0000cc;
 	overflow: hidden;
