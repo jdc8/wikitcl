@@ -1571,7 +1571,7 @@ proc Incoming {req} {
     # some code to detect races (we hope)
     set chans [chan names sock*]
     set s [Dict get? $req -sock]
-    if {[llength $chans] > 1
+    if {0 && [llength $chans] > 1
 	|| ([llength $chans] > 0 && $s ne "" && $s ni $chans)
     } {
 	Debug.error {RACE: new req from $s ($chans)}
