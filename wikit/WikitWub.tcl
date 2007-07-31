@@ -18,6 +18,7 @@ package require Cookies
 package require WikitRss
 package require Sitemap
 package require stx
+package require Responder
 
 package require Honeypot
 Honeypot init dir [file join $::config(docroot) captcha]
@@ -1603,7 +1604,7 @@ proc Incoming {req} {
 		Debug.wikit {Wub Docco [file split $path] - [dict $request -url]}
 		set suffix [file join {} {*}[lrange [file split $path] 2 end]]
 		dict set request -suffix $suffix
-		set response [Http process $request wub do $request]
+		set response [Responder process $request wub do $request]
 	    }
 
 	    /*.jpg -
@@ -1615,7 +1616,7 @@ proc Incoming {req} {
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
 		dict set request -prefix "/images"
 		dict set request -suffix $suffix
-		set response [Http process $request images do $request]
+		set response [Responder process $request images do $request]
 	    }
 
 	    /css/*.css -
@@ -1625,7 +1626,7 @@ proc Incoming {req} {
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
 		dict set request -suffix [file tail $suffix]
 		dict set request -prefix "/css"
-		set response [Http process $request css do $request]
+		set response [Responder process $request css do $request]
 	    }
 
 	    /*.gz {
@@ -1634,7 +1635,7 @@ proc Incoming {req} {
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
 		dict set request -prefix "/bin"
 		dict set request -suffix $suffix
-		set response [Http process $request bin do $request]
+		set response [Responder process $request bin do $request]
 	    }
 
 	    /robots.txt -
@@ -1644,7 +1645,7 @@ proc Incoming {req} {
 		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
 		dict set request -prefix "/scripts"
 		dict set request -suffix $suffix
-		set response [Http process $request scripts do $request]
+		set response [Responder process $request scripts do $request]
 	    }
 
 	    /_motd -
@@ -1668,7 +1669,7 @@ proc Incoming {req} {
 		set qd [Query add [Query parse $request] N $suffix]
 		dict set request -Query $qd
 		Debug.wikit {direct N: [Query value $qd N]}
-		set response [Http process $request wikit do $request]
+		set response [Responder process $request wikit do $request]
 	    }
 
 	    /rss.xml {
@@ -1693,26 +1694,26 @@ proc Incoming {req} {
 		Debug.wikit {welcome invocation}
 		dict set request -prefix "/html"
 		dict set request -suffix welcome.html
-		set response [Http process $request html do $request]
+		set response [Responder process $request html do $request]
 	    }
 
 	    //// {
 		Debug.wikit {/ invocation}
 		dict set request -suffix 0
 		dict set request -Query [Query parse $request]
-		set response [Http process $request WikitWub do $request 0]
+		set response [Responder process $request WikitWub do $request 0]
 	    }
 
 	    default {
 		Debug.wikit {default invocation}
 		dict set request -suffix $fn
 		dict set request -Query [Query parse $request]
-		set response [Http process $request WikitWub do $request $fn]
+		set response [Responder process $request WikitWub do $request $fn]
 	    }
 	}
 
 	# send response
-	set response [Http process $request convert do $response]	;# convert page
+	set response [Responder process $request convert do $response]	;# convert page
 	Send $response
 	set request [dict create]	;# go idle
     }
