@@ -29,7 +29,6 @@ package provide WikitWub 1.0
 
 # create a queue of pending work
 ::struct::queue inQ
-variable request ""
 
 # ::Wikit::GetPage {id} -
 # ::Wikit::Expand_HTML {text}
@@ -1054,8 +1053,8 @@ namespace eval WikitWub {
 	}
 
 	Debug.wikit {/search: '$S'}
-	dict set request -prefix "/$S"
-	dict set request -suffix $S
+	dict set r -prefix "/$S"
+	dict set r -suffix $S
 
 	set ::Wikit::searchLong [regexp {^(.*)\*$} $S x ::Wikit::searchKey]
 	return [WikitWub do $r 2]
@@ -1568,21 +1567,11 @@ proc Disconnected {args} {
 proc Incoming {req} {
     inQ put $req	;# add the incoming request to the inQ
 
-    # some code to detect races (we hope)
-    set chans [chan names sock*]
-    set s [Dict get? $req -sock]
-    if {0 && [llength $chans] > 1
-	|| ([llength $chans] > 0 && $s ne "" && $s ni $chans)
-    } {
-	Debug.error {RACE: new req from $s ($chans)}
-    }
-
     variable request
     while {[dict size $request] == 0
 	   && [catch {inQ get} req eo] == 0
        } {
 	set request $req
-
 	dict set request -cookies [Cookies parse4server [Dict get? $request cookie]]
 
 	# get a plausible prefix/suffix split
@@ -1591,42 +1580,6 @@ proc Incoming {req} {
 	dict set request -prefix "/$fn"
 	dict set request -suffix $suffix
 	Debug.wikit {invocation: path:$path fn:$fn suffix:$suffix}
-
-	# a known bot may only access /_honeypot and /_captcha or their aliases
-	if {[dict exists $request -bot]
-	    && $path ne "/_captcha"
-	} {
-	    # Known bot: everything but /_captcha gets redirected to /_honeypot
-	    Debug.wikit {Honeypot: it's a bot, and not /_captcha}
-	    if {
-		$path eq "/$::WikitWub::protected(HoneyPot)"
-		|| $path eq "/_honeypot"
-	    } {
-		Debug.wikit {Honeypot: it's a bot, and going to /_honeypot}
-		set path /_honeypot
-		dict set request -prefix $path
-		dict set request -suffix "_honeypot"
-		set fn _honeypot
-	    } else {
-		# redirect everything else to /_honeypot
-		Debug.wikit {Honeypot: it's a bot, so we're redirecting to /_honeypot}
-		set url "http://[dict get $request host]/_honeypot"
-		Send [Http Relocated $request $url]
-		set request [dict create]	;# go idle
-		continue	;# process next request
-	    }
-	} elseif {$path eq "/$::WikitWub::protected(HoneyPot)"
-		  || $path eq "/_honeypot"
-		  || [pest $req]
-	      } {
-	    # not a known bot, until it touches Honeypot
-	    Debug.wikit {Honeypot: Triggered the Trap}
-	    # silent redirect to /_honeypot
-	    set path /_honeypot
-	    dict set request -prefix $path
-	    dict set request -suffix "_honeypot"
-	    set fn _honeypot
-	}
 
 	switch -glob -- $path {
 	    /*.php -
@@ -1692,15 +1645,6 @@ proc Incoming {req} {
 		dict set request -prefix "/scripts"
 		dict set request -suffix $suffix
 		set response [Http process $request scripts do $request]
-	    }
-
-	    /_honeypot -
-	    /_captcha {
-		# handle the honeypot - either a bot has just fallen in,
-		# or a known bot is being sent there.
-		Debug.wikit {honeypot $path - $fn}
-		dict set request -suffix [string trimleft $fn _]
-		set response [Http process $request ::honeypot do $request]
 	    }
 
 	    /_motd -
