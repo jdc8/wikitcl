@@ -224,7 +224,6 @@ if {$multi} {
 	wikitroot $wikitroot
 	dataroot $data
 	utf8re [::utf8::makeUtf8Regexp]
-	mkmutex $mkmutex
 	wikidb $wikidb
 	wubdir $topdir
     }] {
