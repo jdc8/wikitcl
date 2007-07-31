@@ -327,7 +327,7 @@ namespace eval WikitWub {
     }
 
     proc /state {r} {
-	set state [SParent Activity state]
+	set state [Activity state]
 	set result [<table> class sortable [subst {
 	    [<thead> [<tr> [<th> [join {cid socket thread backend ip start end log} </th><th>]]]]
 	    [<tbody> [Foreach row $state {
@@ -344,11 +344,11 @@ namespace eval WikitWub {
     proc /activity {r {L "current"} {F "html"} args} {
 	# generate an activity page
 	if {$L eq "log"} {
-	    set act [SParent Activity log]
+	    set act [Activity log]
 	    set title "Activity Log"
 	    set alt [<a> href "/_activity?L=current" "Current Activity"]
 	} else {
-	    set act [SParent Activity current]
+	    set act [Activity current]
 	    set title "Current Activity"
 	    set alt [<a> href "/_activity?L=log" "Activity Log"]
 	}
@@ -999,7 +999,7 @@ namespace eval WikitWub {
 
     proc invalidate {r url} {
 	Debug.wikit {invalidating $url} 3
-	Parent Cache delete http://[dict get $r host]/$url
+	Cache delete http://[dict get $r host]/$url
     }
 
     proc locate {page {exact 1}} {
@@ -1559,25 +1559,27 @@ catch {
     set ::WikitWub::motd [::fileutil::cat [file join $config(docroot) motd]]
 }
 
-proc Parent {args} {
-    ::thread::send -async $::thread::parent $args
-}
-
-proc SParent {args} {
+# Activity - fetch an activity log
+proc Activity {args} {
+    set args [linsert $args 0 Activity]
     return [::thread::send $::thread::parent $args]
 }
 
-proc Worker {req args} {
-    ::thread::send -async [dict get $req -worker] $args
+# Cache - interact with cache
+proc Cache {args} {
+    set args [linsert $args 0 Cache]
+    ::thread::send -async $::thread::parent $args
 }
 
-proc Send {rsp args} {
-    set rsp [dict merge $rsp $args]
-    if {[dict exists $rsp -worker]} {
-	::thread::send -async [dict get $rsp -worker] [list HttpdWorker Send $rsp]
-    } else {
-	HttpdWorker Send $rsp
-    }
+# Block - interact with block
+proc Block {args} {
+    set args [linsert $args 0 Block]
+    ::thread::send -async $::thread::parent $args
+}
+
+# Send a packet
+proc Send {rsp} {
+    ::thread::send -async [dict get $rsp -worker] [list HttpdWorker Send $rsp]
 }
 
 # disconnected - courtesy indication
@@ -1598,7 +1600,6 @@ proc Incoming {req} {
 	Debug.error {RACE: new req from $s ($chans)}
     }
 
-    variable response
     variable request
     while {[dict size $request] == 0
 	   && [catch {inQ get} req eo] == 0
@@ -1633,7 +1634,7 @@ proc Incoming {req} {
 		# redirect everything else to /_honeypot
 		Debug.wikit {Honeypot: it's a bot, so we're redirecting to /_honeypot}
 		set url "http://[dict get $request host]/_honeypot"
-		Send $response [Http Relocated $request $url]
+		Send [Http Relocated $request $url]
 		set request [dict create]	;# go idle
 		continue	;# process next request
 	    }
@@ -1656,10 +1657,10 @@ proc Incoming {req} {
 	    /*.exe -
 	    /cgi-bin/* {
 		# block the originator by IP
-		Parent Block block [dict get $request -ipaddr] "Bogus URL"
+		Block block [dict get $request -ipaddr] "Bogus URL"
 
 		# send the bot a 404
-		Send $response [Http NotFound $request]
+		Send [Http NotFound $request]
 
 		set request [dict create]	;# go idle
 		continue	;# process next request

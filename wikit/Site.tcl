@@ -63,8 +63,10 @@ if {[info exists starkit::topdir]} {
     #puts stderr "drdir:$drdir topdir:$topdir home:$home"
 }
 
+package require Thread
 package require Listener
-package require HttpdThread
+#package require HttpdThread
+package require HttpdSingle
 package require Http
 package require Debug 2.0
 
