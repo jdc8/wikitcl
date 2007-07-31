@@ -1567,7 +1567,7 @@ proc Disconnected {args} {
 proc Incoming {req} {
     inQ put $req	;# add the incoming request to the inQ
 
-    variable request
+    variable request {}
     while {[dict size $request] == 0
 	   && [catch {inQ get} req eo] == 0
        } {
