@@ -212,7 +212,7 @@ Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docr
 
 # start Listener
 #set ::Httpd::server_id "Wub [package present Httpd]" ;# name of this server
-Httpd init server_id "Wub [package present Httpd]" max 2 incr 2 over 20
+Httpd init server_id "Wub [package present Httpd]" max 1 incr 1 over 40
 
 if {[info exists server_port]} {
     # the listener and server ports differ
