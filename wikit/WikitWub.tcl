@@ -1549,37 +1549,14 @@ Direct wikit -namespace ::WikitWub -ctype "x-text/wiki"
 Convert convert -conversions 1 -namespace ::WikitWub
 
 foreach {dom expiry} {css {tomorrow} images {next week} scripts {tomorrow} img {next week} html 0 bin 0} {
-    File $dom -root [file join $config(docroot) $dom] -expires $expiry
+    File $dom -root [file join $::config(docroot) $dom] -expires $expiry
 }
 
-Mason wub -url /_wub -root [file join $config(wubdir) docs] -auth .before -wrapper .after -dirhead {name size mtime}
+Mason wub -url /_wub -root [file join $::config(wubdir) docs] -auth .before -wrapper .after -dirhead {name size mtime}
 convert Namespace ::MConvert
 
 catch {
-    set ::WikitWub::motd [::fileutil::cat [file join $config(docroot) motd]]
-}
-
-# Activity - fetch an activity log
-proc Activity {args} {
-    set args [linsert $args 0 Activity]
-    return [::thread::send $::thread::parent $args]
-}
-
-# Cache - interact with cache
-proc Cache {args} {
-    set args [linsert $args 0 Cache]
-    ::thread::send -async $::thread::parent $args
-}
-
-# Block - interact with block
-proc Block {args} {
-    set args [linsert $args 0 Block]
-    ::thread::send -async $::thread::parent $args
-}
-
-# Send a packet
-proc Send {rsp} {
-    ::thread::send -async [dict get $rsp -worker] [list HttpdWorker Send $rsp]
+    set ::WikitWub::motd [::fileutil::cat [file join $::config(docroot) motd]]
 }
 
 # disconnected - courtesy indication
@@ -1803,7 +1780,7 @@ package require Wikit::Format
 package require Wikit::Db
 package require Wikit::Cache
 
-set Wikit::mutex $config(mkmutex)	;# set mutex for wikit writes
+set Wikit::mutex $::config(mkmutex)	;# set mutex for wikit writes
 Wikit::BuildTitleCache
 
 set script [mk::get wdb.pages!9 page]
@@ -1812,7 +1789,7 @@ catch {eval $script}
 
 # move utf8 regexp into utf8 package
 # utf8 package is loaded by Query
-set ::utf8::utf8re $config(utf8re); unset config(utf8re)
+set ::utf8::utf8re $::config(utf8re); unset ::config(utf8re)
 
 # initialize RSS feeder
 WikitRss init wdb "Tcler's Wiki" http://wiki.tcl.tk/
@@ -1831,5 +1808,3 @@ Debug.log {RESTART: [clock format [clock second]]}
 
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
 Debug.log {LOCAL: '$r' ($eo)} 6
-
-thread::wait

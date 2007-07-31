@@ -1,10 +1,9 @@
 #! /usr/bin/env tclsh
 lappend auto_path /usr/lib/
 
-package require Mk4tcl
-
+#### Configuration
 # set some default configuration flags and values
-foreach {name val} {
+foreach {name val} [subst {
     listener_port 8080
     base "/tmp/wiki"
     globaldocroot 0
@@ -13,30 +12,32 @@ foreach {name val} {
     cmdport 8082
     overwrite 0
 
+    host [info hostname]
+    multi 1
+
     wikidb wikit.tkd
     history history
     readonly 0
     prime 0
     utf8 0
     upflag ""
-} {
+}] {
     set $name $val
 }
-set host [info hostname]	;# default host name
-catch {
-    # allow site configuration (script not under SVN control)
-    source [file join [file dirname [info script]] vars.tcl]
-}
+
+# load site configuration script (not under SVN control)
+catch {source [file join [file dirname [info script]] vars.tcl]}
+
+# load command-line configuration vars
 foreach {name val} $argv {
     set $name $val	;# set global config vars
 }
 
-# env handling - remove the linked env
+# env handling - remove the C-linked env
 array set _env [array get ::env]; unset ::env
 array set ::env [array get _env]; unset _env
 
-#package require snit 2.0
-
+#### Directory location and construction
 # set up home directory relative to script
 set home [file normalize [file dirname [info script]]]
 
@@ -64,14 +65,14 @@ if {[info exists starkit::topdir]} {
 }
 
 package require Thread
-package require Listener
-#package require HttpdThread
-package require HttpdSingle
-package require Http
+#package require HttpdThread	;# choose multithreaded
+package require HttpdSingle	;# choose singlethreaded
+package require Http		;# Http support
 package require Debug 2.0
 
 # Application Starts Here
 
+#### Docroot construction and priming
 # create data and sessionroot dirs
 catch {file mkdir [set data [file join $base data]]}
 catch {file mkdir [set wikitroot $data]}
@@ -103,7 +104,7 @@ if {![info exists ::env(WIKIT_HIST)]} {
 }
 #puts stderr "History: $::env(WIKIT_HIST)"
 
-# clean up symlinks in docroot
+# clean up any symlinks in docroot
 package require functional
 package require fileutil
 foreach file [::fileutil::find $docroot  [lambda {file} {
@@ -113,10 +114,11 @@ foreach file [::fileutil::find $docroot  [lambda {file} {
     file copy [file join $drdir [K [file link $dfile] [file delete $dfile]]] $dfile
 }
 
-# initialize the mime package
+#### Mime init
 package require Mime
 Mime::Init -dsname [file join $data ext2mime.tie]
 
+#### Console init
 package require Stdin
 if {$cmdport eq ""} {
     Stdin start	;# start a command shell on stdin
@@ -124,6 +126,7 @@ if {$cmdport eq ""} {
     Stdin start $cmdport ;# start a command shell on localhost,$cmdport
 }
 
+#### Debug init
 Debug on error 100
 Debug on log 10
 Debug on block 10
@@ -135,16 +138,16 @@ Debug off cookies 10
 Debug off dispatch 10
 Debug off wikit 10
 
-set worker_args [list wikidb $wikidb]
-
-set mkmutex [thread::mutex create]
+#### Wikit Initialization
 
 # load Wikit packages
+package require Mk4tcl
 package require Wikit::Format
 namespace import Wikit::Format::*
 package require Wikit::Db
 
 # initialize wikit DB
+set mkmutex [thread::mutex create]
 Wikit::WikiDatabase [file join $wikitroot $wikidb] wdb 1
 
 # prime wikit db if needed
@@ -203,25 +206,51 @@ catch {
     mk::get wdb.pages!9 page
 }
 
-# make the utf8 regular expression to save thread startup lag
-set utf8re [::utf8::makeUtf8Regexp]
+#### Backend initialization
+if {$multi} {
+    package require Backend
+    Debug.log {STARTING BACKENDS [clock format [clock seconds]]}
+    set Backend::incr $backends	;# reduce the backend thread quantum for faster testing
+    Backend configure scriptdir [file dirname [info script]]
+    Backend configure scriptname WikitWub.tcl
+    Backend configure docroot $docroot wikitroot $wikitroot dataroot $data
+    Backend configure utf8re [::utf8::makeUtf8Regexp]
+    Backend configure mkmutex $mkmutex wikidb $wikidb wubdir $topdir
+    Httpd configure dispatch Backend	;# script for each request
+} else {
+    foreach {n v} [subst {
+	scriptdir [file dirname [info script]]
+	scriptname WikitWub.tcl
+	docroot $docroot
+	wikitroot $wikitroot
+	dataroot $data
+	utf8re [::utf8::makeUtf8Regexp]
+	mkmutex $mkmutex
+	wikidb $wikidb
+	wubdir $topdir
+    }] {
+	set ::config($n) $v
+    }
+    #lappend auto_path $home
+    package require WikitWub
+    Httpd configure dispatch ""	;# script for each request
+    proc Send {r} {
+	HttpdWorker Send $r
+    }
+}
 
-Debug.log {STARTING BACKENDS [clock format [clock seconds]]}
-
-package require Backend
-set Backend::incr $backends	;# reduce the backend thread quantum for faster testing
-Backend init scriptdir [file dirname [info script]] scriptname WikitWub.tcl docroot $docroot wikitroot $wikitroot dataroot $data utf8re $utf8re mkmutex $mkmutex {*}$worker_args wubdir $topdir
-
-# start Listener
-#set ::Httpd::server_id "Wub [package present Httpd]" ;# name of this server
-Httpd init server_id "Wub [package present Httpd]" max 1 incr 1 over 40
-
+#### start Httpd protocol
+Httpd configure server_id "Wub [package present Httpd]"
+Httpd configure max 1 incr 1 over 40
 if {[info exists server_port]} {
     # the listener and server ports differ
-    set ::Httpd::server_port $server_port
+    Httpd configure server_port $server_port
 }
-Listener listen -host $host -port $listener_port -sockets Httpd -dispatch "Backend incoming"
 
+#### start Listener
+Listener listen -host $host -port $listener_port -sockets Httpd -dispatch Backend
+
+#### Load local semantics from ./local.tcl
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
 Debug.log {Site LOCAL: '$r' ($eo)}
 
