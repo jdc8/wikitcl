@@ -64,7 +64,6 @@ if {[info exists starkit::topdir]} {
     #puts stderr "drdir:$drdir topdir:$topdir home:$home"
 }
 
-package require Thread
 #package require HttpdThread	;# choose multithreaded
 package require HttpdSingle	;# choose singlethreaded
 package require Http		;# Http support
@@ -147,7 +146,6 @@ namespace import Wikit::Format::*
 package require Wikit::Db
 
 # initialize wikit DB
-set mkmutex [thread::mutex create]
 Wikit::WikiDatabase [file join $wikitroot $wikidb] wdb 1
 
 # prime wikit db if needed
@@ -210,6 +208,7 @@ catch {
 if {$multi} {
     package require Backend
     Debug.log {STARTING BACKENDS [clock format [clock seconds]]}
+    set mkmutex [thread::mutex create]
     set Backend::incr $backends	;# reduce the backend thread quantum for faster testing
     Backend configure scriptdir [file dirname [info script]]
     Backend configure scriptname WikitWub.tcl
