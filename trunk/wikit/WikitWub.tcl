@@ -1585,6 +1585,7 @@ proc Incoming {req} {
 	/_wub -
 	/_wub/* {
 	    # Wub documentation - via the wikit Direct domain
+	    set path [dict get $req -path]
 	    set suffix [file join {} {*}[lrange [file split $path] 2 end]]
 	    dict set req -suffix $suffix
 	    ::wub do $req
@@ -1666,6 +1667,7 @@ catch {[mk::get wdb.pages!9 page]}
 # move utf8 regexp into utf8 package
 # utf8 package is loaded by Query
 set ::utf8::utf8re $::config(utf8re); unset ::config(utf8re)
+set ::roflag 0
 
 # initialize RSS feeder
 WikitRss init wdb "Tcler's Wiki" http://wiki.tcl.tk/
