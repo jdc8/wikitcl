@@ -1637,6 +1637,7 @@ proc Incoming {req} {
 
 	/ {
 	    # need to silently redirect welcome file
+	    dict set req -suffix ""
 	    ::html do $req
 	}
 
