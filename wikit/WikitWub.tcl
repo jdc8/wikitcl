@@ -28,9 +28,6 @@ catch {source [file join [file dirname [info script]] pest.tcl]}
 
 package provide WikitWub 1.0
 
-# create a queue of pending work
-::struct::queue inQ
-
 # ::Wikit::GetPage {id} -
 # ::Wikit::Expand_HTML {text}
 # ::Wikit::pagevars {id args} - assign values to named vars
@@ -1538,190 +1535,124 @@ namespace eval WikitWub {
     namespace ensemble create -subcommands {}
 }
 
-set roflag 0
-if {$roflag} {
-    proc WikitWub::/save {args} {
-	return "<h2>Read Only</h2><p>Your changes have not been saved.</p>"
-    }
-}
-
+# initialize wikit specific Direct domain and Convert domain
 Direct wikit -namespace ::WikitWub -ctype "x-text/wiki"
 Convert convert -conversions 1 -namespace ::WikitWub
 
+# directories of static files
 foreach {dom expiry} {css {tomorrow} images {next week} scripts {tomorrow} img {next week} html 0 bin 0} {
     File $dom -root [file join $::config(docroot) $dom] -expires $expiry
 }
 
+# Wub documentation directory
 Mason wub -url /_wub -root [file join $::config(wubdir) docs] -auth .before -wrapper .after -dirhead {name size mtime}
 convert Namespace ::MConvert
 
+# set message of the day (if any) to be displayed on /4
 catch {
     set ::WikitWub::motd [::fileutil::cat [file join $::config(docroot) motd]]
 }
 
-# disconnected - courtesy indication
-# we've been disconnected
+# Disconnected - courtesy indication that we've been disconnected
 proc Disconnected {args} {
     # we're pretty well stateless
 }
 
+# Responder::pre - preprocess request by parsing any cookies
+proc Responder::pre {req} {
+    dict set req -cookies [Cookies parse4server [Dict get? $req cookie]]
+    return $req
+}
+
+# Responder::post - postprocess response by converting
+proc Responder::post {rsp} {
+    return [::convert do $rsp]
+}
+
+# Incoming - indication of incoming request
 proc Incoming {req} {
-    inQ put $req	;# add the incoming request to the inQ
-
-    variable request {}
-    while {[dict size $request] == 0
-	   && [catch {inQ get} req eo] == 0
-       } {
-	set request $req
-	dict set request -cookies [Cookies parse4server [Dict get? $request cookie]]
-
-	# get a plausible prefix/suffix split
-	set path [dict get $request -path]
-	set suffix [file join {} {*}[lassign [file split $path] -> fn]]
-	dict set request -prefix "/$fn"
-	dict set request -suffix $suffix
-	Debug.wikit {invocation: path:$path fn:$fn suffix:$suffix}
-
-	switch -glob -- $path {
-	    /*.php -
-	    /*.wmv -
-	    /*.exe -
-	    /cgi-bin/* {
-		# block the originator by IP
-		Block block [dict get $request -ipaddr] "Bogus URL"
-
-		# send the bot a 404
-		Send [Http NotFound $request]
-
-		set request [dict create]	;# go idle
-		continue	;# process next request
-	    }
-
-	    /_wub -
-	    /_wub/* {
-		# Wub documentation
-		# we process them via the wikit Direct domain
-		Debug.wikit {Wub Docco [file split $path] - [dict $request -url]}
-		set suffix [file join {} {*}[lrange [file split $path] 2 end]]
-		dict set request -suffix $suffix
-		set response [Responder process $request wub do $request]
-	    }
-
-	    /*.jpg -
-	    /*.gif -
-	    /*.png -
-	    /favicon.ico {
-		# need to silently redirect image files
-		Debug.wikit {image invocation}
-		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -prefix "/images"
-		dict set request -suffix $suffix
-		set response [Responder process $request images do $request]
-	    }
-
-	    /css/*.css -
-	    /*.css {
-		# need to silently redirect css files
-		Debug.wikit {css invocation}
-		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -suffix [file tail $suffix]
-		dict set request -prefix "/css"
-		set response [Responder process $request css do $request]
-	    }
-
-	    /*.gz {
-		# need to silently redirect gz files
-		Debug.wikit {bin invocation}
-		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -prefix "/bin"
-		dict set request -suffix $suffix
-		set response [Responder process $request bin do $request]
-	    }
-
-	    /robots.txt -
-	    /*.js {
-		# need to silently redirect js files
-		Debug.wikit {script invocation}
-		set suffix [file join {} {*}[lrange [file split $path] 1 end]]
-		dict set request -prefix "/scripts"
-		dict set request -suffix $suffix
-		set response [Responder process $request scripts do $request]
-	    }
-
-	    /_motd -
-	    /_edit/* -
-	    /_save/* -
-	    /_history/* -
-	    /_revision/* -
-	    /_diff/* -
-	    /_ref/* -
-	    /_cleared -
-	    /_search/* -
-	    /_search -
-	    /_activity -
-	    /_state -
-	    /_sitemap -
-	    /_login {
-		# These are wiki-local restful command URLs,
-		# we process them via the wikit Direct domain
-		Debug.wikit {direct invocation}
-		dict set request -suffix [string trimleft $fn _]
-		set qd [Query add [Query parse $request] N $suffix]
-		dict set request -Query $qd
-		Debug.wikit {direct N: [Query value $qd N]}
-		set response [Responder process $request wikit do $request]
-	    }
-
-	    /rss.xml {
-		# These are wiki-local restful command URLs,
-		# we process them via the wikit Direct domain
-		Debug.rss {rss invocation}
-		set code [catch {WikitRss rss} r eo]
-		Debug.rss {rss result $code ($eo)}
-		switch -- $code {
-		    1 {
-			set response [Http ServerError $request $r $eo]
-		    }
-
-		    default {
-			set response [Http CacheableContent $request [clock seconds] $r text/xml]
-		    }
-		}
-	    }
-
-	    / {
-		# need to silently redirect welcome file
-		Debug.wikit {welcome invocation}
-		dict set request -prefix "/html"
-		dict set request -suffix welcome.html
-		set response [Responder process $request html do $request]
-	    }
-
-	    //// {
-		Debug.wikit {/ invocation}
-		dict set request -suffix 0
-		dict set request -Query [Query parse $request]
-		set response [Responder process $request WikitWub do $request 0]
-	    }
-
-	    default {
-		Debug.wikit {default invocation}
-		dict set request -suffix $fn
-		dict set request -Query [Query parse $request]
-		set response [Responder process $request WikitWub do $request $fn]
-	    }
+    Responder Incoming $req -glob -- [dict get $req -path] {
+	/*.php -
+	/*.wmv -
+	/*.exe -
+	/cgi-bin/* {
+	    # block the originator by IP
+	    Block block [dict get $req -ipaddr] "Bogus URL"
+	    Send [Http Forbidden $req]
+	    continue	;# process next request
 	}
 
-	# send response
-	set response [Responder process $request convert do $response]	;# convert page
-	Send $response
-	set request [dict create]	;# go idle
+	/_wub -
+	/_wub/* {
+	    # Wub documentation - via the wikit Direct domain
+	    set suffix [file join {} {*}[lrange [file split $path] 2 end]]
+	    dict set req -suffix $suffix
+	    ::wub do $req
+	}
+
+	/*.jpg -
+	/*.gif -
+	/*.png -
+	/favicon.ico {
+	    # silently redirect image files - strip all but tail
+	    dict set req -suffix [file tail [dict get $req -path]]
+	    ::images do $req
+	}
+	
+	/css/*.css -
+	/*.css {
+	    # silently redirect css files
+	    dict set req -suffix [file tail [dict get $req -path]]
+	    ::css do $req
+	}
+
+	/*.gz {
+	    # silently redirect gz files
+	    dict set req -suffix [file tail [dict get $req -path]]
+	    ::bin do $req
+	}
+
+	/robots.txt -
+	/*.js {
+	    # silently redirect js files
+	    dict set req -suffix [file tail [dict get $req -path]]
+	    ::scripts do $req
+	}
+
+	/_* {
+	    # These are wiki-local restful command URLs,
+	    # we process them via the wikit Direct domain
+	    Debug.wikit {direct invocation}
+	    set suffix [string trimleft [file tail [dict get $req -path]] _]
+	    dict set req -suffix $suffix
+	    dict set req -Query [Query add [Query parse $req] N $suffix]
+	    ::wikit do $req
+	}
+
+	/rss.xml {
+	    # generate and return RSS feed
+	    Http CacheableContent $req [clock seconds] [WikitRss rss] text/xml
+	}
+
+	/ {
+	    # need to silently redirect welcome file
+	    ::html do $req
+	}
+
+	//// {
+	    # wikit welcome page
+	    dict set req -Query [Query parse $req]
+	    ::WikitWub do $req 0
+	}
+
+	default {
+	    ::WikitWub do $req [file tail [dict get $req -path]]
+	}
     }
 }
 
-# fetch and initialize Wikit
+#### initialize Wikit
 package require Wikit::Format
-#namespace import Wikit::Format::*
 package require Wikit::Db
 package require Wikit::Cache
 
@@ -1730,9 +1661,7 @@ if {[info exists ::config(mkmutex)]} {
 }
 Wikit::BuildTitleCache
 
-set script [mk::get wdb.pages!9 page]
-#puts stderr "Script: $script"
-catch {eval $script}
+catch {[mk::get wdb.pages!9 page]}
 
 # move utf8 regexp into utf8 package
 # utf8 package is loaded by Query
@@ -1741,17 +1670,16 @@ set ::utf8::utf8re $::config(utf8re); unset ::config(utf8re)
 # initialize RSS feeder
 WikitRss init wdb "Tcler's Wiki" http://wiki.tcl.tk/
 
+#### set up appropriate debug levels
 Debug on log 10
-
+Debug on error 10
 Debug off query 10
 Debug off wikit 10
 Debug off direct 10
 Debug off convert 10
 Debug off cookies 10
 Debug off socket 10
-Debug on error 10
 
-Debug.log {RESTART: [clock format [clock second]]}
-
+#### Source local config script (not under version control)
 catch {source [file join [file dirname [info script]] local.tcl]} r eo
-Debug.log {LOCAL: '$r' ($eo)} 6
+Debug.log {RESTART: [clock format [clock second]] '$r' ($eo)}
