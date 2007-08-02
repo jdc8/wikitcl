@@ -1637,13 +1637,16 @@ proc Incoming {req} {
 
 	/ {
 	    # need to silently redirect welcome file
-	    dict set req -suffix ""
+	    dict set req -suffix welcome.html
+	    dict set req -prefix ""
 	    ::html do $req
 	}
 
 	//// {
 	    # wikit welcome page
 	    dict set req -Query [Query parse $req]
+	    dict set req -suffix ""
+	    dict set req -prefix ""
 	    ::WikitWub do $req 0
 	}
 
