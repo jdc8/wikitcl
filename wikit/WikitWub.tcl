@@ -772,12 +772,12 @@ namespace eval WikitWub {
 			}
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
 			if { $V > 0 } {
-			    lappend menu [Ref /_revision/$N?V=[expr {$V-1}]&A=$A "Previous version"]
+			    lappend menu [Ref "/_revision/$N?V=[expr {$V-1}]&A=$A" "Previous version"]
 			}
 			if { $V < ($nver-1) } {
-			    lappend menu [Ref /_revision/$N?V=[expr {$V+1}]&A=$A "Next version"]
+			    lappend menu [Ref "/_revision/$N?V=[expr {$V+1}]&A=$A" "Next version"]
 			}
-			lappend menu [Ref /_revision/$N?V=[expr {$nver-1}]&A=[expr {!$A}] Current]
+			lappend menu [Ref "/_revision/$N?V=[expr {$nver-1}]&A=[expr {!$A}]" Current]
 		    }
 		}
 	    }
@@ -815,14 +815,14 @@ namespace eval WikitWub {
 	    if {$pstart < 0} {
 		set pstart 0
 	    }
-	    append links [<a> href $N?S=$pstart&L=$L "Previous $L"]
+	    append links [<a> href "$N?S=$pstart&L=$L" "Previous $L"]
 	}
 	set nstart [expr {$S + $L}]
 	if {$nstart < $nver} {
 	    if {$links ne {}} {
 		append links { - }
 	    }
-	    append links [<a> href $N?S=$nstart&L=$L "Next $L"]
+	    append links [<a> href "$N?S=$nstart&L=$L" "Next $L"]
 	}
 	if {$links ne {}} {
 	    append C <p> $links </p> \n
@@ -832,7 +832,7 @@ namespace eval WikitWub {
 	} else {
 	    Wikit::pagevars $N name
 	    append C "<table class='history'>\n<tr>"
-	    foreach {column span} {{Revision} 1 {Date} 1 {Modified By} 1 {Line compare with} 3 {Word compare with} 3 Annotated 1 WikiText 1} {
+	    foreach {column span} {Revision 1 Date 1 {Modified By} 1 {Line compare with} 3 {Word compare with} 3 Annotated 1 WikiText 1} {
 		append C [<th> colspan $span $column]
 	    }
 	    append C </tr>\n
@@ -842,8 +842,8 @@ namespace eval WikitWub {
 		set next [expr {$vn+1}]
 		set curr [expr {$nver-1}]
 		append C <tr>
-		append C [<td> [<a> href /_revision/$N?V=$vn rel nofollow $vn]]
-		append C [<td> [clock format $date -format "%Y-%m-%d %T" -gmt true]]
+		append C [<td> [<a> href "/_revision/$N?V=$vn" rel nofollow $vn]]
+		append C [<td> [clock format $date -format "%Y-%m-%d %T" -gmt 1]]
 		append C [<td> $who]
 
 		if { $prev >= 0 } {
@@ -878,8 +878,8 @@ namespace eval WikitWub {
 		    append C <td></td>
 		}
 
-		append C [<td> [<a> href /_revision/$N?V=$vn&A=1 $vn]]
-		append C [<td> [<a> href /_revision/$N.txt?V=$vn $vn]]
+		append C [<td> [<a> href "/_revision/$N?V=$vn&A=1" $vn]]
+		append C [<td> [<a> href "/_revision/$N.txt?V=$vn" $vn]]
 		append C </tr> \n
 	    }
 	    append C </table> \n
@@ -971,7 +971,6 @@ namespace eval WikitWub {
 	}
 
 	variable cookie
-	#set cdict [Cookies add $cdict -path / -name $cookie -value $nickname {*}$age]
 	set cdict [Cookies add $cdict -path / -name $cookie -value $nickname {*}$age]
 	dict set r -cookies $cdict
 	if {$R eq ""} {
