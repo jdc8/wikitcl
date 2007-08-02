@@ -1623,7 +1623,7 @@ proc Incoming {req} {
 	    # These are wiki-local restful command URLs,
 	    # we process them via the wikit Direct domain
 	    Debug.wikit {direct invocation}
-	    set suffix [string trimleft [file tail [dict get $req -path]] _]
+	    set suffix [string trimleft [dict get $req -path] /_]
 	    dict set req -suffix $suffix
 	    dict set req -Query [Query add [Query parse $req] N $suffix]
 	    ::wikit do $req
