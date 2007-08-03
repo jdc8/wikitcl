@@ -556,7 +556,7 @@ namespace eval WikitWub {
     }
 
     proc /diff {r N {V -1} {D -1} {W 0}} {
-	Debug.wikit {/diff $args}
+	Debug.wikit {/diff $N $V $D $W}
 
 	set ext [file extension $N]	;# file extension?
 	set N [file rootname $N]	;# it's a simple single page
@@ -1625,7 +1625,7 @@ proc Incoming {req} {
 	    Debug.wikit {direct invocation}
 	    set path [file split [dict get $req -path]]
 	    set N [lindex $path end]
-	    set suffix /[string trimleft [lindex $path 0] /_]
+	    set suffix /[string trimleft [lindex $path 1] _]
 	    dict set req -suffix $suffix
 	    dict set req -Query [Query add [Query parse $req] N $N]
 	    ::wikit do $req
