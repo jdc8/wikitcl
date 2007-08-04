@@ -1557,12 +1557,6 @@ proc Disconnected {args} {
     # we're pretty well stateless
 }
 
-# Responder::pre - preprocess request by parsing any cookies
-proc Responder::pre {req} {
-    dict set req -cookies [Cookies parse4server [Dict get? $req cookie]]
-    return $req
-}
-
 # Responder::post - postprocess response by converting
 proc Responder::post {rsp} {
     return [::convert do $rsp]
@@ -1570,6 +1564,7 @@ proc Responder::post {rsp} {
 
 # Incoming - indication of incoming request
 proc Incoming {req} {
+    dict set req -cookies [Cookies parse4server [Dict get? $req cookie]]
     Responder Incoming $req -glob -- [dict get $req -path] {
 	/*.php -
 	/*.wmv -
