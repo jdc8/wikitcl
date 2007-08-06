@@ -298,7 +298,7 @@ namespace eval WikitWub {
 
 	    append content <body> \n
 	    append content $rspcontent
-	    append content [Honeypot link /$protected(HoneyPot)]
+	    append content [Honeypot link /$protected(HoneyPot).html]
 	    append content </body> \n
 	    append content </html> \n
 	}
