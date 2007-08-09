@@ -583,7 +583,7 @@ namespace eval WikitWub {
 	    set D [expr {$nver - 2}]	;# default
 	}
 
-	Wikit::pagevars $N pname
+	Wikit::pagevars $N name
 
 	set t1 [split [get_page_with_version $N $V 0] "\n"]
 	if {!$W} { set uwt1 [unWhiteSpace $t1] } else { set uwt1 $t1 }
@@ -684,7 +684,7 @@ namespace eval WikitWub {
 		}
 		.tk {
 		    set Title [<h1> "Difference between version $V and $D for [Ref $N]"]
-		    set name "Difference between version $V and $D for $pname"
+		    set name "Difference between version $V and $D for $name"
 		    set C [::Wikit::TextToStream $C]
 		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
 		    append result "<p>$C"
@@ -695,7 +695,7 @@ namespace eval WikitWub {
 		}
 		default {
 		    set Title "Difference between version $V and $D for [Ref $N]"
-		    set name "Difference between version $V and $D for $pname"
+		    set name "Difference between version $V and $D for $name"
 		    if { $W } {
 			set C [::Wikit::ShowDiffs $C]
 		    } else {
@@ -740,7 +740,7 @@ namespace eval WikitWub {
 	    return [Http NotFound $r]
 	}
 
-	Wikit::pagevars $N pname
+	Wikit::pagevars $N name
 	set menu {}
 	if {$V >= 0} {
 	    switch -- $ext {
@@ -750,7 +750,7 @@ namespace eval WikitWub {
 		}
 		.tk {
 		    set Title "<h1>Version $V of [Ref $N]</h1>"
-		    set name "Version $V of $pname"
+		    set name "Version $V of $name"
 		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
 		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
 		    append result "<p>$C"
@@ -765,10 +765,10 @@ namespace eval WikitWub {
 		    } else {
 			if {$A} {
 			    set Title [<h1> "Annotated version $V of [Ref $N]"]
-			    set name "Annotated version $V of $pname"
+			    set name "Annotated version $V of $name"
 			} else {
 			    set Title [<h1> "Version $V of [Ref $N]"]
-			    set name "Version $V of $pname"
+			    set name "Version $V of $name"
 			}
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
 			if { $V > 0 } {
