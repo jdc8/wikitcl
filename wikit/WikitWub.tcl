@@ -1628,7 +1628,7 @@ proc Incoming {req} {
 
 	/rss.xml {
 	    # generate and return RSS feed
-	    Http CacheableContent $req [clock seconds] [WikitRss rss] text/xml
+	    Http CacheableContent $req [clock seconds] [WikitRss rss] application/rss+xml
 	}
 
 	/ {
