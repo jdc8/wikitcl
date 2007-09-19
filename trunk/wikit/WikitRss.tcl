@@ -1,7 +1,7 @@
 #! /usr/bin/env tclkit
 
 package require Mk4tcl
-package reqire Html
+package require Html
 package provide WikitRss 1.0
 
 ###############################################################
