@@ -1,6 +1,7 @@
 #! /usr/bin/env tclkit
 
 package require Mk4tcl
+package reqire Html
 package provide WikitRss 1.0
 
 ###############################################################
@@ -44,11 +45,6 @@ namespace eval WikitRss {
 	"
     }
 
-    # htmlQuote protects the tricky characters in a string
-    proc htmlQuote {s} {
-	string map { & &amp; < &lt; > &gt; } $s
-    }
-
     # item generates a single news item for the feed.
     # Each item is a different Wiki page.
     #
@@ -66,10 +62,10 @@ namespace eval WikitRss {
     proc item {Title Time Author Url} {
 	set time [clock format $Time -format "%a, %d %b %Y %T GMT" -gmt 1]
 	return "<item>
-		<title>[htmlQuote $Title]</title>
+		<title>[xmlarmour $Title]</title>
 		<link>$Url</link>
 		<pubDate>$time</pubDate>
-		<description>modified by $Author</description>
+		<description>modified by [xmlarmour $Author]</description>
 		</item>"
     }
 
