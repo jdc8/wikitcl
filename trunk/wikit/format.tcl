@@ -549,7 +549,8 @@ namespace eval Wikit::Format {
 
     # Compat: (Bugfix) Added " to the regexp as proper boundary of an url.
     #set re {\m(https?|ftp|news|mailto|file):(\S+[^\]\)\s\.,!\?;:'>"])}
-    set re {\m(https?|ftp|news|mailto|file):([^\s:]+[^\]\)\s\.,!\?;:'>"])}
+    #set re {\m(https?|ftp|news|mailto|file):([^\s:]+[^\]\)\s\.,!\?;:'>"])}
+    set re {\m(https?|ftp|news|mailto|file):([^\s:]\S*[^\]\)\s\.,!\?;:'>"])}
     set txt 0
     set end [string length $text]
 
@@ -598,7 +599,8 @@ namespace eval Wikit::Format {
     # Complex RE's used to process the string
     set pre  {\[([^\]]*)]}  ; #  page references ; # compat
   #set lre  {\m(https?|ftp|news|mailto|file):(\S+[^\]\)\s\.,!\?;:'>"])} ; # "
-  set lre  {\m(https?|ftp|news|mailto|file):([^\s:]+[^\]\)\s\.,!\?;:'>"])} ; # "
+  #set lre  {\m(https?|ftp|news|mailto|file):([^\s:]+[^\]\)\s\.,!\?;:'>"])} ; # "
+  set lre  {\m(https?|ftp|news|mailto|file):([^\s:]\S*[^\]\)\s\.,!\?;:'>"])} ; # "
 
                                                  set blre "\\\[\0\1u\2(\[^\0\]*)\0\\\]"
 
