@@ -1601,6 +1601,7 @@ proc Incoming {req} {
 	    ::css do $req
 	}
 
+	/*.bz2 -
 	/*.gz {
 	    # silently redirect gz files
 	    dict set req -suffix [file tail [dict get $req -path]]
