@@ -1,127 +1,150 @@
-/* CSS stylesheet for the Tcler's Wiki by Steve.Cassidy@mq.edu.au */
-/* Tweaks by jcw, 09nov02 - just because it's so terribly easy... */
-
 BODY {
-  color: #000;
-  margin-left: 2%;
-  margin-right: 2%;
-  font-family: "Trebuchet Ms", Verdana, sans-serif;
+  font-size: 10pt;
+  font-family: sans-serif;
+  margin: 0; padding: 0;
 }   
 
-H1 { 
-  font-size: xx-large;
+h1 { 
+  font-size: 16pt;
+  font-weight: normal;
 }
 
-H2 {
-  font-size: x-large;
+h2 {
+  font-size: 12pt;
 }
 
-/* Set the style of links, A:link is the default style */
 A:link { 
-    font-weight: bold;
     text-decoration: none;
 }
 
-/* These are for links that have been visited or that are clicked on  */
 A:visited, A:active { 
-   font-weight: bold;
+   color: blue;
    text-decoration: none;
 }
 
-/* Set a background colour for <pre> sections and show text in red      */
-/* note that NS4.x and earlier don't show the background colour for the */
-/* full width of the page, just for where there's text                  */
 pre {
-   background-color: #E0E0E0;
-   font-weight: bold;
+   background-color: white;
+   color: #696969;
    font-family: monospace;
-   color: #802020;
-   margin: 0;
+   font-size: 9pt;
 }
 
 pre.prediff {
    background-color: #E0E0E0;
    color: #000000;
-   font-weight: bold;
    font-family: monospace;
-   margin: 0;
 }
 
-dt {
-   font-weight: bold;
+div.header {
+  background: #DDD;
+  min-height: 53px;
 }
 
-/* layout */ 
-
-div#header{
-  background: #EEE;
-  text-align: right;
-}
-
-div#header h1{
-  height:50px;
-  line-height:50px;
-  margin:0;
-  padding-left:10px;
-  background: #EEE;
+div.logo {
+  float: right;
+  vertical-align: middle;
   text-align: left;
+  padding: 0.75em 50px 0 15px;
+  margin: 0 1.5em 0 0;
+  height: 40px;
+  font-size: 120%;
+  background: url(/images/plume.png) top right no-repeat;
 }
 
-div#footer{
-  background: #EEE;
-}
-
-div#footer p{
+div.centered {
   text-align: center;
 }
 
-div#menu_area{
+hr {
+  height:0;
+  border:0;
+  border-top: 1px solid #999;
+  margin: 1em 0 1em 0;
+}
+
+div.title {
+  padding: 5px 0 3px 5px;
+  font-size: 16pt;
+  background: #DDD;
+  text-align: left;
+  font-weight: bold;
+  font-weight: normal;
+}
+
+div.updated {
+  padding: 0 0 7px 7px;
+  font-size: 80%;
+  color: #696969;
+}
+
+div#menu_area {
+  float:left;
+  width:145px;
+  padding-left: 5px;
   background:#DDD;
+  margin-top: 1px;
+  overflow: hidden;
 }
 
-div#menu_area ul{
-  PADDING-LEFT: 0px;
-  MARGIN-LEFT: 15px
+div#menu_area ul {
+  padding-left: 0px;
+  list-style: none;
 }
 
-div#navigation{
-  background:#CCC;
-}
-
-div#extra{
-  background:#BBB;
-}
-
-div#wrapper{
+div#wrapper {
   float:right;
   width:100%;
-  margin-left:-200px;
+  margin-left:-145px;
+  margin-right: 5px;
+  background: white;
 }
 
-div#content{
-  margin-left:200px;
+div#content {
+  margin-left: 145px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 0 5px 0 5px;
 }
 
-div#menu_area{
-  float:left;
-  width:200px;
-}
-
-div#navigation{
-  float:left;
-  clear:left;
-  width:200px;
-}
-
-div#extra{
+div.navigation {
   float:left;
   clear:left;
-  width:200px;
+  width:145px;
+  background:#DDD;
+  margin-top: 1em;
 }
 
-div#footer{
+div.extra {
+  float:left;
+  clear:left;
+  width:145px;
+  background:#DDD;
+  bottom: 0px;
+  top: 0px;
+}
+
+div.footer {
   clear:both;
-  width:100%;
+  text-align: center;
+  padding-left: 135px;
+}
+
+div.footer p {
+  text-align: center;
+}
+
+div#wiki_menu {
+  font-size: 9pt;
+  line-height: 150%;
+}
+
+form#searchform {
+  padding: 0; margin: 0;
+}
+
+input#searchtxt {
+  width: 135px;
+  color: gray;
 }
 
 /*--------------------------------------------------|
@@ -131,10 +154,12 @@ div#footer{
 |--------------------------------------------------*/
 
 .dtree {
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-size: 11px;
 	color: #666;
 	white-space: nowrap;
+}
+
+div.category {
+	margin: 5em 0 0 0;
 }
 .dtree img {
 	border: 0px;
@@ -163,30 +188,59 @@ div#footer{
  * Markup for version history
  */
 
+table {
+	margin: 2px;
+	border: 1px solid #DDD;
+	border-collapse: collapse;
+	font-size: 9pt;
+}
+
+div.centered table {
+	margin-top: 2px;
+	margin-bottom: 2px;
+	margin-left:auto; 
+	margin-right:auto;
+}
+
+thead th {
+	padding: 2px 5px 2px 5px;
+	text-align: left;
+	border: 1px solid gray;
+	background-color: #DDD;
+}
+
+tbody td {
+	padding: 2px 5px 2px 5px;
+	border-left: 1px solid #DDD;
+	border-right: 1px solid #DDD;
+}
+
+tbody tr.odd {
+	background-color: #EEF;
+}
+
+th.Rev, th.Line, th.Word, th.Annotated, th.WikiText,
+td.Rev, td.Line1, td.Line2, td.Word1, td.Word2, td.Annotated, td.WikiText {
+	text-align: right;
+}
+
+th.Line, th.Word, td.Line3, td.Word3 {
+	text-align: center;
+}
+
+td.Date {
+	font-family: fixed;
+	vertical-align: top;
+	min-width: 9em;
+}
+
+td.Who {
+	vertical-align: top;
+	font-family: fixed;
+}
+
 table.history {
-	border-collapse: collapse;
-}
-
-table.history th {
-	background: #ffffcc;
-	border: 1px dotted #0000cc;
-}
-
-table.history td {
-	border: 1px dotted #0000cc;
-}
-
-table.wikit_table {
-	border-collapse: collapse;
-}
-
-table.wikit_table th {
-	background: #ffffcc;
-	border: 1px dotted #0000cc;
-}
-
-table.wikit_table td {
-	border: 1px dotted #0000cc;
+	margin-bottom: 2em;
 }
 
 div.annotated {
@@ -271,12 +325,14 @@ span.whitespacediff pre {
 
 span.nick {
  font-size: 90%;
- color: gray;
+ color: #696969;
  margin: 0 0 2px 2em;
 }
+
 span.dots {
  display: none;
 }
+
 a.delta {
  font-size: 70%;
  color: #D3D3D3;
@@ -289,4 +345,23 @@ ins {
 
 del {
   background: #ffa0a0; 
+}
+
+div.edit {
+  background: #DDD;
+  overflow: auto;
+}
+
+div.editcontents {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+form#edit button {
+   width: 5em;
+   margin: 0 1em 0 1em;
+}
+
+a.button {
+   color: black;
 }
