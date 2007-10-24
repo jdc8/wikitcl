@@ -20,6 +20,9 @@ package require Sitemap
 package require stx
 package require Responder
 
+# uncomment to turn off caching for testing
+package provide Cache 2.0 ; proc Cache args {return {}}
+
 package require Honeypot
 Honeypot init dir [file join $::config(docroot) captcha]
 
@@ -69,14 +72,29 @@ namespace eval WikitWub {
 	page {$name} {
 	    <!-- standard page decoration -->
 	    [div container {
-		[div header {[<h1> class title $Title]}]
+		[div header {
+			[div logo wiki.tcl.tk]
+			[div title $Title]
+			[div updated $updated]
+		}]
 		[expr {[info exists ro]?$ro:""}]
-		[div {wrapper content} {[tclarmour $C]}]
-		<hr noshade>
+		[divID wrapper {
+		    [divID content {[tclarmour $C]}]
+		}]
+		[divID menu_area {
+		    [divID wiki_menu {[menuUL $menu]}]
+		    [searchF]
+		    [div navigation {
+			[divID page_toc {[script $T]}]
+		    }]
+		    [div extra {
+			[divID wiki_toc {}]
+		    }]
+		}]
 		[div footer {
 		    [<p> [variable bullet; join $menu $bullet]]
-		    [searchF]
 		}]
+		[script checkTOC($N);]
 	    }]
 	}
 
@@ -95,45 +113,52 @@ namespace eval WikitWub {
 
 	edit {Editing $N} {
 	    <!-- page sent when editing a page -->
-	    [set disabled [expr {$nick eq ""}]
-	     set _submit [<submit> save class positive disabled $disabled {
-		 [<img> src /tick.png alt ""] Save
-	     }]
-	     <form> edit method post action /_save/$N {
-		 [div header {[<h1> [tclarmour "[Ref $N] $_submit"]]}]
-		 [<textarea> C rows 30 cols 72 style width:100% [list [tclarmour $C]]]
-		 [<hidden> O [list [tclarmour $date] [tclarmour $who]]]
-		 [<hidden> _charset_ {}]
-		 $_submit
-	     }]
-	    [<hr> size 1]
-	    Editing quick-reference:
-	    <blockquote><font size=-1>
-	    <b>LINK</b> to <b>\[<a href='../6' target='_blank'>Wiki formatting rules</a>\]</b> - or to
-	    <b><a href='http://here.com/' target='_blank'>http://here.com/</a></b>
-	    - use <b>\[http://here.com/\]</b> to show as
-	    <b>\[<a href='http://here.com/' target='_blank'>1</a>\]</b>
-	    <br>
-	    <b>BULLETS</b> are lines with 3 spaces, an asterisk, a space - the item must be one (wrapped) line
-	    <br>
-	    <b>NUMBERED LISTS</b> are lines with 3 spaces, a one, a dot, a space - the item must be one (wrapped) line
-	    <br>
-	    <b>PARAGRAPHS</b> are split with empty lines,
-	    <b>UNFORMATTED TEXT </b>starts with white space
-	    <br>
-	    <b>HIGHLIGHTS</b> are indicated by groups of single quotes - use two for
-	    <b>''</b><i>italics</i><b>''</b>, three for <b>'''bold'''</b>
-	    <br>
-	    <b>SECTIONS</b> can be separated with a horizontal line - insert a line containing just 4 dashes
-	    </font></blockquote><hr size=1>
-	    [If {$date != 0} {
-		[<i> "Last saved on [<b> [clock format $date -gmt 1 -format {%Y-%m-%d %T}]]"]
+	    [div edit {
+		[div header {
+			[div logo wiki.tcl.tk]
+			[div title "Edit [tclarmour [Ref $N]]"]
+			[div updated "make your changes then press Save below"]
+		}]
+ 	    [div editcontents {
+		[set disabled [expr {$nick eq ""}]
+		set _submit [<submit> save class positive disabled $disabled Save]
+		<form> edit method post action /_save/$N {
+		      [<textarea> C rows 30 cols 72 style width:100% [list [tclarmour $C]]]
+		      [<hidden> O [list [tclarmour $date] [tclarmour $who]]]
+		      [<hidden> _charset_ {}]
+		       <button><a class='button' href='/$N'>Cancel</a></button>
+		       $_submit
+		 }]
+		<hr>
+		Editing quick-reference:
+		<blockquote><font size=-1>
+		<b>LINK</b> to <b>\[<a href='../6' target='_blank'>Wiki formatting rules</a>\]</b> - or to
+		<b><a href='http://here.com/' target='_blank'>http://here.com/</a></b>
+		- use <b>\[http://here.com/\]</b> to show as
+		<b>\[<a href='http://here.com/' target='_blank'>1</a>\]</b>
+		<br>
+		<b>BULLETS</b> are lines with 3 spaces, an asterisk, a space - the item must be one (wrapped) line
+		<br>
+		<b>NUMBERED LISTS</b> are lines with 3 spaces, a one, a dot, a space - the item must be one (wrapped) line
+		<br>
+		<b>PARAGRAPHS</b> are split with empty lines,
+		<b>UNFORMATTED TEXT </b>starts with white space
+		<br>
+		<b>HIGHLIGHTS</b> are indicated by groups of single quotes - use two for
+		<b>''</b><i>italics</i><b>''</b>, three for <b>'''bold'''</b>
+		<br>
+		<b>SECTIONS</b> can be separated with a horizontal line - insert a line containing just 4 dashes
+		</font></blockquote><hr>
+		[If {$date != 0} {
+		    [<i> "Last saved on [<b> [clock format $date -gmt 1 -format {%Y-%m-%d %T}]]"]
+		}]
+		[If {$who_nick ne ""} {
+		    [<i> "by [<b> $who_nick]"]
+		}]
+		[If {$nick ne ""} {
+		    (you are: [<b> $nick])
+		}]
 	    }]
-	    [If {$who_nick ne ""} {
-		[<i> "by [<b> $who_nick]"]
-	    }]
-	    [If {$nick ne ""} {
-		(you are: [<b> $nick])
 	    }]
 	}
 
@@ -220,6 +245,7 @@ namespace eval WikitWub {
     }]]
 
     variable motd ""
+    variable TOC ""
 
     proc div {ids content} {
 	set divs ""
@@ -243,22 +269,32 @@ namespace eval WikitWub {
 	return $divs
     }
 
+    proc menuUL { l } {
+	set m "<ul>\n"
+	foreach i $l {
+	    regsub {id='toggle_toc'} $i {id='toggle_toc_menu'} i
+	    append m "<li>$i</li>"
+	}
+	append m "</ul>"
+    }
+
     proc script { script } {
 	return "<script type='text/javascript'>$script</script>"
     }
 
     # return a search form
     proc searchF {} {
-	return {<form action='/_search' method='get'>
+	return {<form id='searchform' action='/_search' method='get'>
 	    <input type='hidden' name='_charset_'>
-	    <input name='S' type='text' value='Search'>
+	    <input id='searchtxt' name='S' type='text' value='Search' 
+		onfocus='clearSearch();' onblur='setSearch();'>
 	    </form>}
     }
 
     variable maxAge "next month"	;# maximum age of login cookie
     variable cookie "wikit"		;# name of login cookie
 
-    variable htmlhead {<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">}
+    variable htmlhead {<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 //EN">}
     variable language "en"	;# language for HTML
 
     # header sent with each page
@@ -266,7 +302,16 @@ namespace eval WikitWub {
     variable head {
 	<style type='text/css' media='all'>@import url(/wikit.css);</style>
 	<style type='text/css' media='all'>@import url(/buttons.css);</style>
+	<style type='text/css' media='all'>@import url(/dtree.css);</style>
+	<script src='/transclude.js' type='text/javascript'></script>
+	<script src='/dtree.js' type='text/javascript'></script>
 	<link rel='alternate' type='application/rss+xml' title='RSS' href='/rss.xml'>
+	<!--[if lte IE 6]>
+		<style type='text/css' media='all'>@import 'ie6.css';</style>
+	<![endif]-->
+	<!--[if gte IE 7]>
+		<style type='text/css' media='all'>@import 'ie7.css';</style>
+	<![endif]-->
     }
 
     # convertor from wiki to html
@@ -495,12 +540,15 @@ namespace eval WikitWub {
 
 	set name "Cleared pages"
 	set Title "Cleared pages"
-	variable protected
+	set T "function page_toc() {}"
+	set N 0
+	set updated ""
 	variable menus
-	foreach m {Search Changes About Home Help} {
-	    lappend menu $menus($protected($m))
+	foreach m {Home "Recent changes" Help "Toggle TOC"} {
+	    lappend menu $menus($m)
 	}
 	set C [join $results "\n"]
+	
 	return [sendPage $r]
     }
 
@@ -566,7 +614,7 @@ namespace eval WikitWub {
 	    || ![string is integer -strict $D]
             || $N < 0
 	    || $N >= [mk::view size wdb.pages]
-	    || $ext ni {"" .txt .tk .str}
+	    || $ext ni {"" .txt .tk .str .code}
 	} {
 	    return [Http NotFound $r]
 	}
@@ -676,7 +724,6 @@ namespace eval WikitWub {
 	    set C [regsub -all "\0" $C " "]
 	}
 
-	set menu {}
 	if {$V >= 0} {
 	    switch -- $ext {
 		.txt {
@@ -688,6 +735,11 @@ namespace eval WikitWub {
 		    set C [::Wikit::TextToStream $C]
 		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
 		    append result "<p>$C"
+		}
+		.code {
+		    set C [::Wikit::TextToStream $C]
+		    set C [::Wikit::StreamToTcl $C ::WikitWub::InfoProc]
+		    return [Http NoCache [Http Ok $r $C text/plain]]
 		}
 		.str {
 		    set C [::Wikit::TextToStream $C]
@@ -708,11 +760,16 @@ namespace eval WikitWub {
 	    }
 	}
 
+	set T "function page_toc() {}" ;# Do not show page TOC, can be one of the diffs.
 	set menu {}
-	variable protected
 	variable menus
-	foreach m {Search Changes About Home Help} {
-	    lappend menu $menus($protected($m))
+	set updated ""
+	foreach m {Home "Recent changes" Help} {
+	    lappend menu $menus($m)
+	}
+	lappend menu [Ref /_history/$N History]
+	foreach m {"Toggle TOC"} {
+	    lappend menu $menus($m)
 	}
 
 	return [sendPage $r]
@@ -730,7 +787,7 @@ namespace eval WikitWub {
             || $N < 0
 	    || $N >= [mk::view size wdb.pages]
 	    || $V < 0
-	    || $ext ni {"" .txt .tk .str}
+	    || $ext ni {"" .txt .tk .str .code}
 	} {
 	    return [Http NotFound $r]
 	}
@@ -740,8 +797,14 @@ namespace eval WikitWub {
 	    return [Http NotFound $r]
 	}
 
-	Wikit::pagevars $N name
+	variable menus
 	set menu {}
+	lappend menu [Ref /_history/$N History]
+	foreach m {Home "Recent changes" Help} {
+	    lappend menu $menus($m)
+	}
+
+	Wikit::pagevars $N name
 	if {$V >= 0} {
 	    switch -- $ext {
 		.txt {
@@ -749,11 +812,16 @@ namespace eval WikitWub {
 		    return [Http NoCache [Http Ok $r $C text/plain]]
 		}
 		.tk {
-		    set Title "<h1>Version $V of [Ref $N]</h1>"
+		    set Title "Version $V of [Ref $N]"
 		    set name "Version $V of $name"
 		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
-		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U
+		    lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U T
 		    append result "<p>$C"
+		}
+		.code {
+		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
+		    set C [::Wikit::StreamToTcl $C ::WikitWub::InfoProc]
+		    return [Http NoCache [Http Ok $r $C text/plain]]
 		}
 		.str {
 		    set C [::Wikit::TextToStream [get_page_with_version $N $V $A]]
@@ -764,10 +832,10 @@ namespace eval WikitWub {
 			return [Http NotFound $r]
 		    } else {
 			if {$A} {
-			    set Title [<h1> "Annotated version $V of [Ref $N]"]
+			    set Title "Annotated version $V of [Ref $N]"
 			    set name "Annotated version $V of $name"
 			} else {
-			    set Title [<h1> "Version $V of [Ref $N]"]
+			    set Title "Version $V of [Ref $N]"
 			    set name "Version $V of $name"
 			}
 			lassign [::Wikit::StreamToHTML [::Wikit::TextToStream $C] / ::WikitWub::InfoProc] C U T
@@ -777,18 +845,22 @@ namespace eval WikitWub {
 			if { $V < ($nver-1) } {
 			    lappend menu [Ref "/_revision/$N?V=[expr {$V+1}]&A=$A" "Next version"]
 			}
-			lappend menu [Ref "/_revision/$N?V=[expr {$nver-1}]&A=[expr {!$A}]" Current]
+			if { $A } {
+			    lappend menu [Ref "/_revision/$N?V=$V&A=0" "Not annotated"]
+			} else {
+			    lappend menu [Ref "/_revision/$N?V=$V&A=1" "Annotated"]
+			}
 		    }
 		}
 	    }
 	}
 
-	variable protected
-	variable menus
-	foreach m {Search Changes About Home Help} {
-	    lappend menu $menus($protected($m))
+	lappend menu [Ref /_history/$N History]
+	foreach m {"Toggle TOC"} {
+	    lappend menu $menus($m)
 	}
-
+	set updated ""
+	set T "function page_toc() {}"
 	return [sendPage $r]
     }
 
@@ -807,93 +879,105 @@ namespace eval WikitWub {
 	set name "Change history of [mk::get wdb.pages!$N name]"
 	set Title "Change history of [Ref $N]"
 
+	set menu {}
+	variable menus
+	foreach m {Home "Recent changes" Help} {
+	    lappend menu $menus($m)
+	}
 	set C ""
-	set links ""
+#	set links ""
 	set nver [expr {1 + [mk::view size wdb.pages!$N.changes]}]
 	if {$S > 0} {
 	    set pstart [expr {$S - $L}]
 	    if {$pstart < 0} {
 		set pstart 0
 	    }
-	    append links [<a> href "$N?S=$pstart&L=$L" "Previous $L"]
+	    lappend menu [<a> href "$N?S=$pstart&L=$L" "Previous $L"]
+#	    append links [<a> href "$N?S=$pstart&L=$L" "Previous $L"]
 	}
 	set nstart [expr {$S + $L}]
 	if {$nstart < $nver} {
-	    if {$links ne {}} {
-		append links { - }
-	    }
-	    append links [<a> href "$N?S=$nstart&L=$L" "Next $L"]
+#	    if {$links ne {}} {
+#		append links { - }
+#	    }
+	    lappend menu [<a> href "$N?S=$nstart&L=$L" "Next $L"]
+#	    append links [<a> href "$N?S=$nstart&L=$L" "Next $L"]
 	}
-	if {$links ne {}} {
-	    append C <p> $links </p> \n
-	}
+#	if {$links ne {}} {
+#	    append C <p> $links </p> \n
+#	}
 	if {[catch {Wikit::ListPageVersionsDB wdb $N $L $S} versions]} {
 	    append C <pre> $versions </pre>
 	} else {
 	    Wikit::pagevars $N name
-	    append C "<table class='history'>\n<tr>"
-	    foreach {column span} {Revision 1 Date 1 {Modified By} 1 {Line compare with} 3 {Word compare with} 3 Annotated 1 WikiText 1} {
-		append C [<th> colspan $span $column]
+	    append C "<table class='history'><thead class='history'>\n<tr>"
+	    foreach {column span} {Rev 1 Date 1 {Modified by} 1 {Line compare} 3 {Word compare} 3 Annotated 1 WikiText 1} {
+		append C [<th> class [lindex $column 0] colspan $span $column]
 	    }
-	    append C </tr>\n
+	    append C "</tr></thead><tbody>\n"
+	    set rowcnt 0
 	    foreach row $versions {
 		lassign $row vn date who
 		set prev [expr {$vn-1}]
 		set next [expr {$vn+1}]
 		set curr [expr {$nver-1}]
-		append C <tr>
-		append C [<td> [<a> href "/_revision/$N?V=$vn" rel nofollow $vn]]
-		append C [<td> [clock format $date -format "%Y-%m-%d %T" -gmt 1]]
-		append C [<td> $who]
+		if { $rowcnt % 2 } {
+		    append C "<tr class='odd'>"
+		} else {
+		    append C "<tr class='even'>"
+		}
+		append C [<td> class Rev [<a> href "/_revision/$N?V=$vn" rel nofollow $vn]]
+		append C [<td> class Date [clock format $date -format "%Y-%m-%d %T" -gmt 1]]
+		append C [<td> class Who $who]
 
 		if { $prev >= 0 } {
-		    append C [<td> [<a> href "/_diff/$N?V=$vn&D=$prev#diff0" $prev]]
+		    append C [<td> class Line1 [<a> href "/_diff/$N?V=$vn&D=$prev#diff0" $prev]]
 		} else {
 		    append C <td></td>
 		}
 		if { $next < $nver } {
-		    append C [<td> [<a> href "/_diff/$N?V=$vn&D=$next#diff0" $next]]
+		    append C [<td> class Line2 [<a> href "/_diff/$N?V=$vn&D=$next#diff0" $next]]
 		} else {
 		    append C <td></td>
 		}
 		if { $vn != $curr } {
-		    append C [<td> [<a> href "/_diff/$N?V=$curr&D=$vn#diff0" Current]]
+		    append C [<td> class Line3 [<a> href "/_diff/$N?V=$curr&D=$vn#diff0" Current]]
 		} else {
 		    append C <td></td>
 		}
 
 		if { $prev >= 0 } {
-		    append C [<td> [<a> href "/_diff/$N?V=$vn&D=$prev&W=1#diff0" $prev]]
+		    append C [<td> class Word1 [<a> href "/_diff/$N?V=$vn&D=$prev&W=1#diff0" $prev]]
 		} else {
 		    append C <td></td>
 		}
 		if { $next < $nver } {
-		    append C [<td> [<a> href "/_diff/$N?V=$vn&D=$next&W=1#diff0" $next]]
+		    append C [<td> class Word2 [<a> href "/_diff/$N?V=$vn&D=$next&W=1#diff0" $next]]
 		} else {
 		    append C <td></td>
 		}
 		if { $vn != $curr } {
-		    append C [<td> [<a> href "/_diff/$N?V=$curr&D=$vn&W=1#diff0" Current]]
+		    append C [<td> class Word3 [<a> href "/_diff/$N?V=$curr&D=$vn&W=1#diff0" Current]]
 		} else {
 		    append C <td></td>
 		}
 
-		append C [<td> [<a> href "/_revision/$N?V=$vn&A=1" $vn]]
-		append C [<td> [<a> href "/_revision/$N.txt?V=$vn" $vn]]
+		append C [<td> class Annotated [<a> href "/_revision/$N?V=$vn&A=1" $vn]]
+		append C [<td> class WikiText [<a> href "/_revision/$N.txt?V=$vn" $vn]]
 		append C </tr> \n
+		incr rowcnt
 	    }
-	    append C </table> \n
+	    append C </tbody></table> \n
 	}
-	if {$links ne {}} {
-	    append C <p> $links </p> \n
-	}
+#	if {$links ne {}} {
+#	    append C <p> $links </p> \n
+#	}
 
-	variable protected
-	variable menus
-	set menu {}
-	foreach m {Search Changes About Home} {
-	    lappend menu $menus($protected($m))
+	foreach m {"Toggle TOC"} {
+	    lappend menu $menus($m)
 	}
+	set updated ""
+	set T "function page_toc() {}"
 	return [sendPage $r]
     }
 
@@ -916,9 +1000,14 @@ namespace eval WikitWub {
     array set protected {Home 0 About 1 Search 2 Help 3 Changes 4 HoneyPot 5 TOC 8 Init 9}
     foreach {n v} [array get protected] {
 	set protected($v) $n
-	variable bullet
-	set menus($v) [Ref $v $n]
     }
+
+    # Init common menu items
+    set menus(Home)             [<a> href "http://wiki.tcl.tk" Home]
+    set "menus(Recent changes)" [Ref 4 "Recent changes"]
+    set menus(Help)             [Ref 3 "Help"]
+    set "menus(Toggle TOC)"     [<a> href "javascript:toggleTOC();" id toggle_toc "Toggle TOC"]
+    set menus(Search)           [Ref 2 "Search"]
 
     set redir {meta: http-equiv='refresh' content='10;url=$url'
 
@@ -1198,6 +1287,9 @@ namespace eval WikitWub {
 
     proc /motd {r} {
 	variable motd
+
+	puts "\n\n\n\n\nmotd: [file join $::config(docroot) motd]\n\n\n\n\n"
+
 	catch {set motd [::fileutil::cat [file join $::config(docroot) motd]]}
 	set motd [string trim $motd]
 
@@ -1210,7 +1302,34 @@ namespace eval WikitWub {
 	return [redir $r $R [<a> href $R "Loaded MOTD"]]
     }
 
-	# called to generate a page with references
+    proc /reloadTOC {r} {
+	variable TOC
+	catch {set TOC [::fileutil::cat [file join $::config(docroot) TOC]]}
+	set TOC [string trim $TOC]
+	if { [string length $TOC] } {
+	    set TOC [::Wikit::FormatTocJavascriptDtree $TOC]
+	}
+
+	invalidate $r _toc ;# make the new TOC show up
+
+	set R http://[dict get $r host]/4
+	return [redir $r $R [<a> href $R "Loaded MOTD"]]
+    }
+
+    proc /reloadCSS {r} {
+	invalidate $r wikit.css
+	invalidate $r ie6.css
+	set R [dict get $r -url]
+	return [Http Ok $r [<a> href $R "Loaded CSS"] text/html]
+    }
+
+    # called to generate wiki-TOC
+    proc /toc {r} {
+	variable TOC
+	return [Http Ok $r $TOC text/javascript]
+    }
+
+    # called to generate a page with references
     proc /ref {r N} {
 	#set N [dict get $r -suffix]
 	Debug.wikit {/ref $N}
@@ -1241,20 +1360,21 @@ namespace eval WikitWub {
 	    dict set rd $page Who $who
 	}
 
-	set C [Html dict2table $rd {Date Name Who}]
+	set C [Html dict2table $rd {Date Name Who} {} ref]
 
 	# include javascripts and CSS for sortable table.
 	set r [sortable $r]
 
-	variable protected
 	variable menus
 	set menu {}
-	foreach m {Search Changes About Home} {
-	    lappend menu $menus($protected($m))
+	foreach m {Home "Recent changes" Help "Toggle TOC"} {
+	    lappend menu $menus($m)
 	}
 
 	set name "References to $N"
 	set Title "References to [Ref $N]"
+	set updated ""
+	set T "function page_toc() {}"
 	return [sendPage $r]
     }
 
@@ -1286,7 +1406,6 @@ namespace eval WikitWub {
 	}
 
 	# tclLog "SearchResults key <$key> long <$searchLong>"
-	set tcount 0
 	set rdate $date
 	set count 0
 	set result "Searched for \"'''$key'''\" (in page titles"
@@ -1295,8 +1414,8 @@ namespace eval WikitWub {
 	}
 	append result "):\n\n"
 
+	set pcnt 0
 	foreach i $rows {
-	    incr tcount
 	    # these are fake pages, don't list them
 	    if {$i == 2 || $i == 4 || $i == 5} continue
 
@@ -1306,13 +1425,13 @@ namespace eval WikitWub {
 	    # ignore "near-empty" pages with at most 1 char, 30-09-2004
 	    if {[mk::get wdb.pages!$i -size page] <= 1} continue
 
-	    append result "   * [::Wikit::GetTimeStamp $date] . . . \[$name\]\n"
-	    set rdate $date
-
-	    incr count
-	    if {$count >= 100} {
-		break
+	    if { $count < 100 } { 
+		append result "   * [::Wikit::GetTimeStamp $date] . . . \[$name\]\n"
+		set rdate $date
+		incr count
 	    }
+
+	    incr pcnt
 	}
 
 	if {$count == 0} {
@@ -1320,8 +1439,8 @@ namespace eval WikitWub {
 	    set rdate 0
 	} else {
 	    append result "   * ''Displayed $count matches''\n"
-	    if {[llength $rows] > $tcount} {
-		append result "   * ''Remaining [expr {[llength $rows] - $tcount}] matches omitted...''\n"
+	    if {$pcnt > $count} {
+		append result "   * ''Remaining [expr {$pcnt - $count + 1}] matches omitted...''\n"
 	    } else {
 		set rdate 0
 	    }
@@ -1336,6 +1455,7 @@ namespace eval WikitWub {
 
     variable trailers {@ _edit ! _ref - _diff + _history}
     proc do {r term} {
+
 	# decompose name
 	set N [file rootname $term]	;# it's a simple single page
 	set ext [file extension $term]	;# file extension?
@@ -1372,6 +1492,7 @@ namespace eval WikitWub {
 	set name ""	;# no default page name
 	set who ""	;# no default editor
 	set cacheit 1	;# default is to cache
+	set T "function page_toc() {}"
 
 	switch -- $N {
 	    2 {
@@ -1395,7 +1516,7 @@ namespace eval WikitWub {
 
 		    lassign [search $term $qdate] C nqdate
 		    set C [::Wikit::TextToStream $C]
-		    lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U
+		    lassign [::Wikit::StreamToHTML $C / ::WikitWub::InfoProc] C U T
 		    if { $nqdate } {
 			append C [<p> [<a> href "/_search?S=[armour $term]&F=$nqdate" "More search results..."]]
 		    }
@@ -1419,6 +1540,7 @@ namespace eval WikitWub {
 	    }
 
 	    default {
+
 		# simple page - non search term
 		if {$N >= [mk::view size wdb.pages]} {
 		    return [Http NotFound $r]
@@ -1438,9 +1560,15 @@ namespace eval WikitWub {
 		    .tk {
 			set C [::Wikit::TextToStream [GetPage $N]]
 			lassign [::Wikit::StreamToTk $C ::WikitWub::InfoProc] C U T
+			return [Http NoCache [Http Ok $r $C text/plain]]
 		    }
 		    .str {
 			set C [::Wikit::TextToStream [GetPage $N]]
+			return [Http NoCache [Http Ok $r $C text/plain]]
+		    }
+		    .code {
+			set C [::Wikit::TextToStream [GetPage $N]]
+			set C [::Wikit::StreamToTcl $C]
 			return [Http NoCache [Http Ok $r $C text/plain]]
 		    }
 		    default {
@@ -1450,7 +1578,7 @@ namespace eval WikitWub {
 		}
 	    }
 	}
-
+		
 	Debug.wikit {located: $N}
 
 	# set up backrefs
@@ -1469,7 +1597,7 @@ namespace eval WikitWub {
 	    }
 	    default {
 		set backRef /_ref/$N
-		set Refs "[llength $refs] [Ref $backRef References]"
+		set Refs "[llength $refs] [Ref $backRef {References to this page}]"
 		set Title [Ref $backRef $name title "click to see [llength $refs] references to this page"]
 		Debug.wikit {backrefs: backRef:'$backRef' Refs:'$Refs' Title:'$Title'} 10
 	    }
@@ -1488,22 +1616,22 @@ namespace eval WikitWub {
 	} {
 	    append updated " by $who_nick"
 	}
-	set menu [list $updated]
+	set menu [list]
 
 	variable protected
+	variable menus
+	foreach m {Home "Recent changes" Help} {
+	    lappend menu $menus($m)
+	}
 	if {![info exists protected($N)]} {
 	    if {!$::roflag} {
 		lappend menu [Ref /_edit/$N Edit]
-		lappend menu [Ref /_history/$N Revisions]
 	    }
+	    lappend menu [Ref /_history/$N History]
+	    lappend menu [Ref $backRef {References to this page}]
 	}
-
-	variable menus
-	lappend menu "Go to [Ref 0]"
-	foreach m {About Changes Help} {
-	    if {$N != $protected($m)} {
-		lappend menu $menus($protected($m))
-	    }
+	foreach m {"Toggle TOC"} {
+	    lappend menu $menus($m)
 	}
 
 	#set Title "<h1 class='title'>$Title</h1>"
@@ -1552,6 +1680,14 @@ catch {
     set ::WikitWub::motd [::fileutil::cat [file join $::config(docroot) motd]]
 }
 
+# set table of contents (if any) to be displayed on in left column menu
+catch {
+    set ::WikitWub::TOC [::fileutil::cat [file join $::config(docroot) TOC]]
+    if { [string length $::WikitWub::TOC] } {
+	set ::WikitWub::TOC [::Wikit::FormatTocJavascriptDtree $::WikitWub::TOC]
+    }
+}
+
 # Disconnected - courtesy indication that we've been disconnected
 proc Disconnected {args} {
     # we're pretty well stateless
@@ -1564,7 +1700,9 @@ proc Responder::post {rsp} {
 
 # Incoming - indication of incoming request
 proc Incoming {req} {
+
     dict set req -cookies [Cookies parse4server [Dict get? $req cookie]]
+
     Responder Incoming $req -glob -- [dict get $req -path] {
 	/*.php -
 	/*.wmv -
@@ -1601,7 +1739,6 @@ proc Incoming {req} {
 	    ::css do $req
 	}
 
-	/*.bz2 -
 	/*.gz {
 	    # silently redirect gz files
 	    dict set req -suffix [file tail [dict get $req -path]]

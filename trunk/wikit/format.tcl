@@ -4,7 +4,7 @@
 package provide Wikit::Format 1.1
 
 namespace eval Wikit::Format {
-  namespace export TextToStream StreamToTk StreamToHTML StreamToRefs \
+  namespace export TextToStream StreamToTk StreamToTcl StreamToHTML StreamToRefs \
     StreamToUrls Expand_HTML FormatTocJavascriptDtree ShowDiffs
 
   # In this file:
@@ -151,7 +151,7 @@ namespace eval Wikit::Format {
       ## there is any.
       #
       switch -exact -- $tag {
-        HR - UL - OL - DL - PRE - TBL - TBLH - HD2 - HD3 - HD4 - BLAME_START - BLAME_END {
+        HR - UL - OL - DL - PRE - TBL - TBLH - HD2 - HD3 - HD4 - BLAME_START - BLAME_END - CENTERED {
           if {$paragraph != {}} {
             if {$mode_fixed} {
               lappend irep FI {}
@@ -446,6 +446,9 @@ namespace eval Wikit::Format {
         BLAME_END {
           lappend irep BLE 0
         }
+        CENTERED {
+          lappend irep CT 0
+        }
         default {
           error "Unknown linetype $tag"
         }
@@ -503,6 +506,7 @@ namespace eval Wikit::Format {
       #EVAL {^(\+eval)(\s?)(.+)$}
       BLAME_START {^(>>>>>>)(\s?)(.+)$}
       BLAME_END   {^(<<<<<<)$}
+      CENTERED {^(!!!!!!)$}
     } {
       # Compat: Remove restriction to multiples of 3 spaces.
       if {[regexp $re $line - pfx aux txt]} {
@@ -1095,6 +1099,25 @@ namespace eval Wikit::Format {
 
   catch {rename vs {}}
 
+  proc StreamToTcl {s {ip ""}} {
+    set result ""  ; # Tcl result
+    set iscode 0
+    foreach {mode text} $s {
+      switch -exact -- $mode {
+        Q  { set iscode 2 }
+        FI { set iscode 1 }
+        FE { set iscode 0 }
+        default {
+          if { $iscode } { 
+            append result "$text\n" 
+            if { $iscode > 1 } { set iscode 0 }
+          }
+        }
+      }
+    }
+    return $result
+  }
+
   # =========================================================================
   # =========================================================================
 
@@ -1125,6 +1148,7 @@ namespace eval Wikit::Format {
     set count 0
     set bltype "a"
     set insdelcnt 0
+    set centered 0
     variable html_frag
 
     foreach {mode text} $s {
@@ -1241,6 +1265,18 @@ namespace eval Wikit::Format {
           append result $html_frag($state$mode)
           set state $mode
         }
+        CT {
+          set mode T
+          append result $html_frag($state$mode)
+          if { $centered } {
+            append result "</p></div><p>"
+            set centered 0
+          } else {
+            append result "</p><div class='centered'><p>"
+            set centered 1
+          }
+          set state T
+        }
       }
     }
     # Close off the last section.
@@ -1254,7 +1290,7 @@ namespace eval Wikit::Format {
       append toc "dp = new dTree('dp');\n"
       append toc "dp.config.useLines = 1;\n"
       append toc "dp.config.useIcons = 0;\n"
-      append toc "dp.add(0,-1,'Page-TOC');\n"
+      append toc "dp.add(0,-1,'Page contents');\n"
       set id 1
       set parentl {-1 0}
       foreach {ht tpid tpb tpe} $tocpos {
@@ -1496,9 +1532,11 @@ namespace eval Wikit::Format {
     append result "d = new dTree('d');\n"
     append result "d.config.useLines = 1;\n"
     append result "d.config.useIcons = 0;\n"
-    append result "d.add($cnt,-1,'Wiki-TOC');\n"
+    append result "d.add($cnt,-1,'Wiki contents');\n"
     set toccnt $cnt
-    set catparent -1
+    incr cnt
+    append result "d.add($cnt,-1,'<br>Categories');\n"
+    set catparent $cnt
     incr cnt
     foreach line [split $C \n] {
       if {[string index $line 0] eq "+"} continue
@@ -1525,7 +1563,7 @@ namespace eval Wikit::Format {
               set name [string range [string trim $name] 0 end-1]
             }
             if { [string length $name] } {
-              append result "d.add($cnt,$parent,'[armour_quote $name]', '/$r.toc')\n"
+              append result "d.add($cnt,$parent,'[armour_quote $name]', '/$r')\n"
               incr cnt
             }
           }
@@ -1537,7 +1575,10 @@ namespace eval Wikit::Format {
                 set catparent $cnt
                 incr cnt
               }
-              append result "d.add($cnt,$catparent,'[armour_quote $line]');\n"
+#              append result "d.add($cnt,$catparent,'[armour_quote $line]');\n"
+              # Strip "Category "
+              set cname [string range $line 9 end]
+              append result "d.add($cnt,$catparent,'[armour_quote $cname]');\n"
               set parent $cnt
               incr cnt
             } else {
@@ -1547,10 +1588,14 @@ namespace eval Wikit::Format {
             }
           }
         }
-      } elseif {[regexp {^\s*(.+?)(\*{0,1})\s+(\[.*\])} $line - opt ref link rest]} {
+      } elseif {[regexp {^\s*(.+?)(\*{0,1})\s+(\[.*\])(\*?)} $line - opt ref link rest brefs]} {
         set link [string trim $link {[]}]
         if { [string length $opt] } {
-          append result "d.add($cnt,$parent,'[armour_quote $opt]','/[::Wikit::LookupPage $link wdb].toc');\n"
+          if { [string length $brefs] } {
+            append result "d.add($cnt,$parent,'[armour_quote $opt]','/_ref/[::Wikit::LookupPage $link wdb]?P=1');\n"
+          } else {
+            append result "d.add($cnt,$parent,'[armour_quote $opt]','/[::Wikit::LookupPage $link wdb]');\n"
+          }
           incr cnt
         }
       }
