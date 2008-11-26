@@ -1,0 +1,467 @@
+body {
+  font-family: sans-serif;
+  font-size: 90%;
+  margin: 0; padding: 0;
+  color: black;
+  background: white;
+}   
+
+h1 { 
+  font-size: 160%;
+  font-weight: normal;
+}
+
+A {
+   text-decoration: none;
+}
+
+pre {
+   color: #331100;
+   font-family: monospace;
+}
+
+pre.prediff {
+   background-color: #E0E0E0;
+   color: #000000;
+   font-family: monospace;
+}
+
+div.header {
+  background: #DDD;
+  min-height: 53px;
+}
+
+div.logo {
+  float: right;
+  vertical-align: middle;
+  text-align: left;
+  padding: 0.75em 50px 0 15px;
+  margin: 0 1.5em 0 0;
+  height: 40px;
+  font-size: 120%;
+  background: url(/images/plume.png) top right no-repeat;
+}
+
+div.logo a.logo {
+  color: black;
+}
+
+div.centered {
+  text-align: center;
+}
+
+hr {
+  height:0;
+  border:0;
+  border-top: 1px solid #999;
+  margin: 1em 0 1em 0;
+}
+
+div.title {
+  padding: 5px 0 3px 5px;
+  font-size: 160%;
+  background: #DDD;
+  text-align: left;
+  font-weight: bold;
+  font-weight: normal;
+}
+
+div.updated {
+  padding: 0 0 7px 7px;
+  font-size: 90%;
+  color: #333;
+}
+
+div#menu_area {
+  float:left;
+  width:145px;
+  padding-left: 5px;
+  background:#DDD;
+  margin-top: 1px;
+  overflow: hidden;
+  display: none;
+}
+
+div#menu_area ul {
+  padding-left: 0px;
+  list-style: none;
+}
+
+div#wrapper {
+  float:right;
+  width:100%;
+  margin-left: 0;
+  margin-right: 5px;
+  background: white;
+}
+
+div#content {
+  margin-left: 5px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 0 5px 0 5px;
+}
+
+div.navigation {
+  float:left;
+  clear:left;
+  width:145px;
+  background:#DDD;
+  margin-top: 1em;
+}
+
+div.extra {
+  float:left;
+  clear:left;
+  width:145px;
+  background:#DDD;
+  bottom: 0px;
+  top: 0px;
+}
+
+div.footer {
+  clear:both;
+  text-align: center;
+  padding-left: 135px;
+}
+
+div.footer p {
+  text-align: center;
+}
+
+div#wiki_menu {
+  # font-size: 90%;
+  line-height: 150%;
+  margin-bottom: 1em;
+}
+
+div#menu_area, div#wiki_menu, div#page_toc, div#wiki_toc, form#searchform, form#gsearchform span#toggle {
+  display: none;
+}
+
+form#searchform {
+  padding: 0; margin: 0;
+}
+
+form#gsearchform {
+  padding: 0; margin: 0;
+}
+
+input#searchtxt {
+  width: 135px;
+  color: gray;
+}
+
+input#googletxt {
+  width: 135px;
+  color: gray;
+}
+
+input#gsearchtxt {
+  width: 135px;
+}
+
+/*
+ * Markup for version history
+ */
+
+table {
+	margin: 2px;
+	border: 1px solid #DDD;
+	border-collapse: collapse;
+	font-size: 95%;
+	vertical-align: top;
+}
+
+div.centered table {
+	margin-top: 2px;
+	margin-bottom: 2px;
+	margin-left:auto; 
+	margin-right:auto;
+}
+
+table td {
+    vertical-align: top;
+}
+
+thead th {
+	padding: 2px 5px 2px 5px;
+	text-align: left;
+	border: 1px solid gray;
+	background-color: #DDD;
+}
+
+tbody td {
+	padding: 2px 5px 2px 5px;
+	border-left: 1px solid #DDD;
+	border-right: 1px solid #DDD;
+}
+
+tbody tr.odd {
+	background-color: #EEF;
+}
+
+th.Rev, th.Line, th.Word, th.Annotated, th.WikiText,
+td.Rev, td.Line1, td.Line2, td.Word1, td.Word2, td.Annotated, td.WikiText {
+	text-align: right;
+}
+
+th.Line, th.Word, td.Line3, td.Word3 {
+	text-align: center;
+}
+
+td.Date {
+	vertical-align: top;
+	min-width: 10em;
+	font-size: 90%;
+}
+
+td.Who {
+	vertical-align: top;
+	font-size: 90%;
+}
+
+table.history {
+	margin-bottom: 2em;
+}
+
+div.annotated {
+	border-top: 1px dotted #0000cc;
+	overflow: hidden;
+	zoom: 1;
+}
+
+span.versioninfo {
+	padding: 0.2em;
+	background: #ffffcc;
+	border-left: 1px dotted #0000cc;
+	border-bottom: 1px dotted #0000cc;
+	float: right;
+	font-size: small;
+	width: 20em;
+}
+
+span.versionwho {
+	text-align: right;
+}
+
+div.oldwikiline {
+  margin:0;
+  background: #ffa0a0;
+}
+
+div.oldwikiline pre { 
+  background: #ffa0a0; 
+  margin: 0;
+}
+
+div.newwikiline {
+  margin:0;
+  background: #80ff80;
+}
+
+div.newwikiline pre { 
+  background: #80ff80; 
+  margin: 0;
+}
+
+div.whitespacediff {
+  margin:0;
+  background: #f0f0ff;
+}
+
+div.whitespacediff pre {
+  margin:0;
+  background: #f0f0ff;
+}
+
+span.oldwikiline {
+  margin:0;
+  background: #ffa0a0;
+}
+
+span.oldwikiline pre { 
+  background: #ffa0a0; 
+  margin: 0;
+}
+
+span.newwikiline {
+  margin:0;
+  background: #80ff80;
+}
+
+span.newwikiline pre { 
+  background: #80ff80; 
+  margin: 0;
+}
+
+span.whitespacediff {
+  margin:0;
+  background: #f0f0ff;
+}
+
+span.whitespacediff pre { 
+  background: #f0f0ff; 
+  margin: 0;
+}
+
+span.nick, span.day {
+ font-size: 90%;
+ color: #666;
+ margin: 0 0 2px 2em;
+}
+
+span.day {
+ margin-left: 0.5em;
+}
+
+span.dots {
+ display: none;
+}
+
+a.delta {
+ font-size: 70%;
+ color: #A3A3A3;
+ margin-left: 0.5em;
+}
+
+span.delta {
+ font-size: 70%;
+ color: #D3D3D3;
+}
+
+img.activity {
+    border: 0;
+}
+
+ins {
+  background: #80ff80;
+}
+
+del {
+  background: #ffa0a0; 
+}
+
+div.edit {
+  background: #DDD;
+  overflow: auto;
+}
+
+div.editcontents {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+form#edit button {
+   width: 5em;
+   margin: 0 1em 0 1em;
+}
+
+a.button {
+   color: black;
+}
+
+a.backreflink {
+  color: green
+}
+
+@media print {
+    div#menu_area, div.footer {
+        display: none;
+    }
+}
+table.rctable {
+	margin: 0;
+	border: 0;
+	font-size: 100%;
+	// width: 100%;
+}
+table.rctable tr.odd {
+	background-color: white;
+}
+table.rctable tbody td {
+	border: 0;
+	vertical-align: top;
+}
+td.rc1 {
+	padding-left: 2em;
+	width: 30em;
+}
+td.rc2, td.rc3, td.rc4 {
+	font-size: 90%;
+	color: #666;
+}
+td.rc2 {
+	width: 15em;
+}
+td.rc3 {
+	width: 10em;
+}
+td.rc4 {
+	width: 10em;
+}
+a.cleared {
+	padding-left: 2em;
+}
+li.result {
+	list-style: none;
+	margin-top: 1.5em;
+}
+p.result {
+	margin: 0 1.5em 0 2em;
+	margin-top: 0.5em;
+}
+img.branding {
+    border: 0;
+    # margin-bottom: -4pt;
+    margin-bottom: -0.5em;
+    margin-left: 0;
+    padding-left: 0;
+}
+div.toc1 {
+    font-size: 90%;
+    color: #666;
+    padding-bottom: 1em;
+}
+div.toc2, div.toc3 {
+    padding-left: 16pt;
+    padding-top: 2pt;
+    vertical-align: middle;
+    width: 400pt;
+    overflow: hidden;
+    color: black;
+}
+
+div.ptoc {
+    vertical-align: middle;
+    white-space: pre;
+}
+
+img.ptoc {
+    vertical-align: middle;
+}
+
+div.toc2 {
+    background: url('join.gif') top left no-repeat;
+}
+div.toc3 {
+    background: url('joinbottom.gif') top left no-repeat;
+}
+A.toc {
+    color: black;
+    font-size: 90%;
+}
+A:active, A:hover {
+    color: blue;
+}
+div.previewarea {
+  background: white;
+}
+
+pre.wikit_options {
+    margin : 0;
+}
+td.wikit_options {
+	border: 1px solid #DDD;
+}
+
