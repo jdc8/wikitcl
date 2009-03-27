@@ -1,0 +1,58 @@
+* {zoom: 1.0;}
+
+body, .dtree {
+  font-size: 90%;
+}
+
+div.title {
+  font-size: 150%;
+}
+
+div.updated {
+  height: 16px;
+}
+
+div.logo {
+  height: 45px;
+}
+
+div#menu_area {
+  margin-top: 0;
+}
+
+div#menu_area ul {
+  margin: 1em 5px 1em 3px;
+}
+
+div#wrapper {
+  overflow-x: auto;
+}
+
+table {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+table.history, table.sortable {
+  width: 100%;
+  font-size: 90%;
+}
+
+input#searchtxt {
+  font-size: 90%;
+}
+
+hr {
+   margin: 0 0 0 0;
+}
+
+div.toc2, div.toc3 {
+    padding-top: 0
+}
+div#page_toc a {
+    color: black;
+}
+div#page_toc a:hover {
+    color: blue;
+}
