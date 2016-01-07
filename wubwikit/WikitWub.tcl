@@ -56,6 +56,7 @@ set API(WikitWub) {
     script_prefix {Url prefix for JS files}
     image_prefix {Url prefix for images}
     need_recaptcha {Is a ReCAPTCHA required to create new pages or to revert pages?}
+    check_spam {Check edits for spam}
 }
 
 Debug define wikit
@@ -63,6 +64,7 @@ Debug define WDB
 
 namespace eval WikitWub {
     variable readonly ""
+    variable check_spam 1
     variable pagecaching 0
     variable inline_html 0
     variable include_pages 0
@@ -533,6 +535,15 @@ namespace eval WikitWub {
 	[<p> "[<b> {Your changes have NOT been saved}], because the content your browser sent contains bogus characters. At character number $point"]
 	[<p> $E]
 	[<p> [<i> "Please check your browser."]]
+	[<hr> size 1]
+	[<p> [<pre> [armour $C]]]
+	[<hr> size 1]
+    }
+
+    # page is seen as spam
+    template spam {spam} {
+	[<h2> "Upload of type '$type' on page $N - [Ref $N $name]"]
+	[<p> "[<b> {Your changes have NOT been saved because they are considered SPAM}]."]
 	[<hr> size 1]
 	[<p> [<pre> [armour $C]]]
 	[<hr> size 1]
@@ -2227,6 +2238,7 @@ namespace eval WikitWub {
 	variable pageURL
 	variable recent_cache
 	variable pagecaching
+	variable check_spam
 
 	Debug.wikit {/edit/save N:$N A:$A O:$O preview:$preview save:$save cancel:$cancel upload:$upload}
 	Debug.wikit {Query: [dict get $r -Query] / [dict get $r -entity]}
@@ -2366,6 +2378,19 @@ namespace eval WikitWub {
 		}
 		Debug.wikit {badutf $N}
 		return [sendPage $r badutf]
+	    }
+
+	    # Check spam by calling bogofilter
+	    if {$check_spam} {
+		set f [::open bogomsg.txt w]
+		puts $f $C
+		::close $f
+		if {![catch {exec bogofilter -I bogomsg.txt} msg errd]} {
+		    # This is SPAM, reject the edit.
+		    puts "SPAM DETECTED:"
+		    puts $C
+		    return [sendPage $r spam]
+		}
 	    }
 
 	    # If editing section, add rest of page around it
