@@ -2387,9 +2387,16 @@ namespace eval WikitWub {
 		::close $f
 		if {![catch {exec bogofilter -I bogomsg.txt} msg errd]} {
 		    # This is SPAM, reject the edit.
+		    puts "********************************************************************************"
 		    puts "SPAM DETECTED:"
 		    puts $C
+		    puts "********************************************************************************"
 		    return [sendPage $r spam]
+		} else {
+		    puts "********************************************************************************"
+		    puts "NO SPAM: $msg, $errd"
+		    puts $C
+		    puts "********************************************************************************"
 		}
 	    }
 
