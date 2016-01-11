@@ -69,7 +69,7 @@ namespace eval WikitWub {
     variable inline_html 0
     variable include_pages 0
     variable hidereadonly 0
-    variable need_recaptcha 1
+    variable need_recaptcha 0
 #    variable text_url [list "" "http://wiki.tcl.tk/24514" "http://wiki.tcl.tk/" "tclconf2010.png"]
     variable text_url [list "wiki.tcl.tk" "http://wiki.tcl.tk" "http://wiki.tcl.tk/" "plume.png"]
     variable empty_template "This is an empty page.\n\nEnter page contents here, upload content using the button above, or click cancel to leave it empty.\n\n<<categories>>Enter Category Here\n"
@@ -542,7 +542,7 @@ namespace eval WikitWub {
 
     # page is seen as spam
     template spam {spam} {
-	[<h2> "Upload of type '$type' on page $N - [Ref $N $name]"]
+	[<h2> "Edit/Upload of type '$type' on page $N - $name"]
 	[<p> "[<b> {Your changes have NOT been saved because they are considered SPAM}]."]
 	[<hr> size 1]
 	[<p> [<pre> [armour $C]]]
@@ -2238,7 +2238,6 @@ namespace eval WikitWub {
 	variable pageURL
 	variable recent_cache
 	variable pagecaching
-	variable check_spam
 
 	Debug.wikit {/edit/save N:$N A:$A O:$O preview:$preview save:$save cancel:$cancel upload:$upload}
 	Debug.wikit {Query: [dict get $r -Query] / [dict get $r -entity]}
@@ -2381,23 +2380,8 @@ namespace eval WikitWub {
 	    }
 
 	    # Check spam by calling bogofilter
-	    if {$check_spam} {
-		set f [::open bogomsg.txt w]
-		puts $f $C
-		::close $f
-		if {![catch {exec bogofilter -I bogomsg.txt} msg errd]} {
-		    # This is SPAM, reject the edit.
-		    puts "********************************************************************************"
-		    puts "SPAM DETECTED:"
-		    puts $C
-		    puts "********************************************************************************"
-		    return [sendPage $r spam]
-		} else {
-		    puts "********************************************************************************"
-		    puts "NO SPAM: $msg, $errd"
-		    puts $C
-		    puts "********************************************************************************"
-		}
+	    if {[bogofilter $C]} {
+		return [sendPage $r spam]
 	    }
 
 	    # If editing section, add rest of page around it
@@ -2654,6 +2638,31 @@ namespace eval WikitWub {
 	}
     }
 
+    proc bogofilter {C} {
+	variable check_spam
+	if {$check_spam} {
+	    # Check title
+	    set f [::open bogomsg.txt w]
+	    puts $f $C
+	    ::close $f
+	    if {![catch {exec bogofilter -I bogomsg.txt} msg errd]} {
+		# This is SPAM, reject the edit.
+		puts "********************************************************************************"
+		puts "SPAM DETECTED:"
+		puts $C
+		puts "********************************************************************************"
+		return 1
+	    } else {
+		puts "********************************************************************************"
+		puts "NO SPAM: $msg, $errd"
+		puts $C
+		puts "********************************************************************************"
+		return 0
+	    }
+	}
+	return 0
+    }
+
     proc /new/create {r T} {
 	variable detect_robots
 	if {$detect_robots && [dict get? $r -ua_class] eq "robot"} {
@@ -2662,6 +2671,13 @@ namespace eval WikitWub {
 	variable mount
 	if {$T eq ""} {
 	    return [Http NoCache [Http Ok $r "No title specified"]]
+	}
+	if {[bogofilter $T]} {
+	    set C $T
+	    set N -1
+	    set name $T
+	    set type unknown
+	    return [sendPage $r spam]
 	}
 	lassign [InfoProc $T] N
 	return [Http Redir $r [file join $mount edit?N=$N]]
