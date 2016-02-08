@@ -2283,6 +2283,13 @@ namespace eval WikitWub {
 	    }]]
 	}
 
+	if {[string length $name] >= 128} {
+	    # Check spam by calling bogofilter
+	    if {[bogofilter $name]} {
+		return [sendPage $r spam]
+	    }
+	}
+
 	# is the caller logged in?
 	set nick [who $r]
 	set when [expr {[dict get $r -received] / 1000000}]
