@@ -2672,7 +2672,7 @@ namespace eval WikitWub {
 	if {$T eq ""} {
 	    return [Http NoCache [Http Ok $r "No title specified"]]
 	}
-	if {[bogofilter $T]} {
+	if {[string length $T] >= 128 && [bogofilter $T]} {
 	    set C $T
 	    set N -1
 	    set name $T
