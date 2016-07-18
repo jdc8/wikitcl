@@ -2379,8 +2379,14 @@ namespace eval WikitWub {
 		return [sendPage $r badutf]
 	    }
 
-	    # Check spam by calling bogofilter
-	    if {[bogofilter $C]} {
+	    # Check spam by calling bogofilter on title if this is an edit of an empty page
+	    if {[string length $page] <= 1} {
+		if {[bogofilter $name title]} {
+		    return [sendPage $r spam]
+		}
+	    }
+	    # Check spam by calling bogofilter on content
+	    if {[bogofilter $C body]} {
 		return [sendPage $r spam]
 	    }
 
@@ -2425,7 +2431,10 @@ namespace eval WikitWub {
 	    }
 	    set C [string map {\t "        " "Robert Abitbol" unperson RobertAbitbol unperson Abitbol unperson} $C]
 	} else {
-	    # check that person is allowed to upload type they've sent
+	    # Check spam by calling bogofilter on title
+	    if {[bogofilter $name title]} {
+		return [sendPage $r spam]
+	    }
 	}
 
 	if {$C eq [WDB GetContent $N]} {
@@ -2638,23 +2647,186 @@ namespace eval WikitWub {
 	}
     }
 
-    proc bogofilter {C} {
+    proc bogofilter {C what} {
 	variable check_spam
 	if {$check_spam} {
-	    # Check title
-	    set f [::open bogomsg.txt w]
-	    puts $f $C
-	    ::close $f
-	    if {![catch {exec bogofilter -I bogomsg.txt} msg errd]} {
+	    # strip punctuation to make it easier for bogofilter to recognize
+	    if 1 {
+		# break apart urls
+		regsub -nocase -all {(http:)} $C { } C
+		regsub -nocase -all {(https:)} $C { } C
+		regsub -nocase -all {(www\.)} $C { } C
+		regsub -nocase -all {(\/)} $C { } C
+		regsub -nocase -all {(\.com)} $C { } C
+		regsub -nocase -all {(\.net)} $C { } C
+		regsub -nocase -all {(\.org)} $C { } C
+
+		# delete non-alphanums
+		regsub -all {[^a-zA-Z0-9 ]} $C "" C
+
+		# remove spaces within numbers
+		regsub -all {([0-9]+) ([0-9]+)} $C {\1\2} C
+
+		# insert space before and aftersequence numbers
+		regsub -all {([0-9]{8,11})} $C { \1 } C
+
+		# add spaces around key words
+		regsub -nocase -all {(support)} $C { \1 } C
+		regsub -nocase -all {(number)} $C { \1 } C
+		regsub -nocase -all {(services)} $C { \1 } C
+		regsub -nocase -all {(issues)} $C { \1 } C
+		regsub -nocase -all {(phone)} $C { \1 } C
+		regsub -nocase -all {(number)} $C { \1 } C
+		regsub -nocase -all {(customer)} $C { \1 } C
+		regsub -nocase -all {(helpline)} $C { \1 } C
+		regsub -nocase -all {(printer)} $C { \1 } C
+		regsub -nocase -all {(call)} $C { \1 } C
+		regsub -nocase -all {(technical)} $C { \1 } C
+		regsub -nocase -all {(mail)} $C { \1 } C
+		regsub -nocase -all {(tech )} $C { \1 } C
+		regsub -nocase -all {(party)} $C { \1 } C
+		regsub -nocase -all {(antivirus)} $C { \1 } C
+		regsub -nocase -all {(password)} $C { \1 } C
+		regsub -nocase -all {(reset)} $C { \1 } C
+		regsub -nocase -all {(remote)} $C { \1 } C
+		regsub -nocase -all {(microsoft)} $C { \1 } C
+		regsub -nocase -all {(windows)} $C { \1 } C
+		regsub -nocase -all {(outlook)} $C { \1 } C
+		regsub -nocase -all {(office)} $C { \1 } C
+		regsub -nocase -all {(norton)} $C { \1 } C
+		regsub -nocase -all {(canon)} $C { \1 } C
+		regsub -nocase -all {(avg)} $C { \1 } C
+		regsub -nocase -all {(help)} $C { \1 } C
+		regsub -nocase -all {(contact)} $C { \1 } C
+		regsub -nocase -all {(contact)} $C { \1 } C
+		regsub -nocase -all {(aol)} $C { \1 } C
+		regsub -nocase -all {(brother)} $C { \1 } C
+		regsub -nocase -all {(office)} $C { \1 } C
+		regsub -nocase -all {(norton)} $C { \1 } C
+		regsub -nocase -all {(canon)} $C { \1 } C
+		regsub -nocase -all {(avg)} $C { \1 } C
+		regsub -nocase -all {(help)} $C { \1 } C
+		regsub -nocase -all {(contact)} $C { \1 } C
+		regsub -nocase -all {(aol)} $C { \1 } C
+		regsub -nocase -all {(brother)} $C { \1 } C
+		regsub -nocase -all {(panda)} $C { \1 } C
+		regsub -nocase -all {(verizon)} $C { \1 } C
+		regsub -nocase -all {(google)} $C { \1 } C
+		regsub -nocase -all {(content)} $C { \1 } C
+		regsub -nocase -all {(search)} $C { \1 } C
+		regsub -nocase -all {(wiki)} $C { \1 } C
+		regsub -nocase -all {(helpdesk)} $C { \1 } C
+		regsub -nocase -all {(hotmail)} $C { \1 } C
+		regsub -nocase -all {(webroot)} $C { \1 } C
+		regsub -nocase -all {(quickbooks)} $C { \1 } C
+		regsub -nocase -all {(canada)} $C { \1 } C
+		regsub -nocase -all {(usa)} $C { \1 } C
+		regsub -nocase -all {(adblock)} $C { \1 } C
+		regsub -nocase -all {(comcast)} $C { \1 } C
+
+
+		# remove stuff that dilutes the filter
+		set C [string map -nocase {category {}} $C]
+		set C [string map -nocase {view {}} $C]
+		set C [string map -nocase {topic {}} $C]
+		set C [string map -nocase {wiki {}} $C]
+		regsub -all { +} $C " " C
+
+		# replace multiple space with single space
+		regsub -all { +} $C " " C
+
+		# remove repeated characters
+		# regsub -nocase -all {([a-z])([a-z]*?)\1+} $C {\1\2} C
+
+		# lowercase and trimmed
+		set C [string tolower $C]
+
+		# specific fix ups
+		regsub -nocase -all {( *g mail *)} $C { gmail } C
+		regsub -nocase -all {( *e mail *)} $C { email } C
+		regsub -nocase -all {( *hot mail *)} $C { hotmail } C
+		regsub -nocase -all {( *quickb..ks *)} $C { quickbooks } C
+		regsub -nocase -all {( *ph.ne *)} $C { phone } C
+		regsub -nocase -all {( *supp.rt *)} $C { support } C
+
+		# trimmed
+		set C [string trim $C]
+
+		# remove single letters
+		regsub -nocase -all { . } $C { } C
+
+		# trimmed again
+		set C [string trim $C]
+	    } else {
+		# old spam rules
+                # delete . and = and - and $ and @ and + and * and . and _ 
+                set C [string map {. {} = {} - {} $ {} @ {} + {} * {} . {}} $C]
+		# replace alphanums with spaces
+		set C [regsub -all {[^a-zA-Z0-9]} $C " "]
+		# remove spaces within numbers
+		set O ""
+		while {$O ne $C} {
+		    set O $C
+		    set C [regsub -all {([0-9]+) +([0-9]+)} $C {\1\2}]
+		}
+		# insert space before sequence of 6 or more numbers
+		set C [regsub -all {([^ 0-9])([0-9]{6,})} $C {\1 \2}]
+		# add space after sequence of 6 or more numbers
+		set C [regsub -all {([0-9]{6,})([^ 0-9])} $C {\1 \2}]
+		# add spaces around key words
+                set C [regsub -nocase -all {(support)} $C { \1 }]
+                set C [regsub -nocase -all {(number)} $C { \1 }]
+                set C [regsub -nocase -all {(services)} $C { \1 }]
+                set C [regsub -nocase -all {(number)} $C { \1 }]
+                set C [regsub -nocase -all {(customer)} $C { \1 }]
+                set C [regsub -nocase -all {(helpline)} $C { \1 }]
+                set C [regsub -nocase -all {(call)} $C { \1 }]
+                set C [regsub -nocase -all {(technical)} $C { \1 }]
+                set C [regsub -nocase -all {(tech )} $C { \1 }]
+		# replace multiple space with single space
+		set C [regsub -all { +} $C " "]
+	    }
+		set spam 0
+		if {$what eq "title"} {
+			if {[string match "*help*" $C]  \
+			    || [string match "*support*" $C] \
+			    || [string match "*customer*" $C] \
+			    || [string match "*quickbooks*" $C] \
+			    || [string match "*norton*" $C] \
+			    || [string match "*intuit*" $C] \
+			    || [string match "*norton*" $C] \
+			    || [string match "*gmail*" $C] \
+			    || [string match "*phone*" $C] \
+			    || [string match "*qb *" $C] \
+			    || [string match "*line*" $C]} {
+				set spam 1
+			}
+		} elseif {[string match "*support*" $C]  \
+			    && [string match "*phone*" $C] \
+			    && [string match "*number*" $C]} {
+				set spam 1
+		}
+		if {$spam == 0} {
+		    set f [::open bogomsg.txt w]
+		    puts $f $C
+		    ::close $f
+		} else {
+			  # removing last number leads to better matching
+			 regsub -nocase -all {[0-9 ]+$} $C {} C
+
+			# removing last alpha leads to better matching
+			regsub -nocase -all {.$} $C {} C
+
+			# trimmed again
+			set C [string trim $C]
+		}
+	    if {$spam == 1 || ![catch {exec bogofilter -I bogomsg.txt} msg errd]} {
 		# This is SPAM, reject the edit.
-		puts "********************************************************************************"
-		puts "SPAM DETECTED:"
-		puts $C
-		puts "********************************************************************************"
+		puts "SPAM DETECTED: $what $spam - $C"
 		return 1
 	    } else {
 		puts "********************************************************************************"
-		puts "NO SPAM: $msg, $errd"
+		puts "NO SPAM: $what $spam -  $msg, $errd"
 		puts $C
 		puts "********************************************************************************"
 		return 0
@@ -2672,7 +2844,7 @@ namespace eval WikitWub {
 	if {$T eq ""} {
 	    return [Http NoCache [Http Ok $r "No title specified"]]
 	}
-	if {[string length $T] >= 128 && [bogofilter $T]} {
+	if {[bogofilter $T title]} {
 	    set C $T
 	    set N -1
 	    set name $T

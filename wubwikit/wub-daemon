@@ -25,7 +25,7 @@ case "$1" in
   start)
 	echo -n "Starting $DESC with $STARTER: "
 	if [ $STARTER = "daemon" ]; then
-	    /usr/bin/daemon --name=wub --chdir=/var/www/wikitcl/wubwikit --dbglog=/var/log/wub/wub.daemon --user=www-data.www-data --umask=005 --respawn --inherit --core --verbose=1 --debug=1 --errlog=/var/log/wub/wub.err --output=/var/log/wub/wub.out --command="$TCLSH $DAEMON $DAEMON_OPTS"
+	    /usr/bin/daemon --env="HOME=/var/www" --name=wub --chdir=/var/www/wikitcl/wubwikit --dbglog=/var/log/wub/wub.daemon --user=www-data.www-data --umask=005 --respawn --inherit --core --verbose=1 --debug=1 --errlog=/var/log/wub/wub.err --output=/var/log/wub/wub.out --command="$TCLSH $DAEMON $DAEMON_OPTS"
 	else
 	    start-stop-daemon --start --quiet --background \
 		--chuid www-data:www-data \
@@ -54,7 +54,7 @@ case "$1" in
 	#
 	echo -n "Restarting $DESC: "
 	if [ $STARTER = "daemon" ]; then
-	    /usr/bin/daemon --user www-data.www-data --name=wub --restart
+	    /usr/bin/daemon --env="HOME=/var/www" --chdir=/var/www/wikitcl/wubwikit  --user www-data.www-data --name=wub --restart
 	else
 	    start-stop-daemon --stop --quiet --pidfile \
 		/var/run/$NAME.pid --exec $DAEMON
