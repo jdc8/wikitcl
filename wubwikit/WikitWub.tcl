@@ -2863,7 +2863,8 @@ namespace eval WikitWub {
 	}
 
 	variable mount
-	if {[dict get $params T] eq ""} {
+	set T [dict get $params T]
+	if {$T eq ""} {
 	    return [Http NoCache [Http Ok $r "No title specified"]]
 	}
 	if {[bogofilter $T title]} {
