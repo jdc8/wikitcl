@@ -2866,6 +2866,13 @@ namespace eval WikitWub {
 	if {[dict get $params T] eq ""} {
 	    return [Http NoCache [Http Ok $r "No title specified"]]
 	}
+	if {[bogofilter $T title]} {
+	    set C $T
+	    set N -1
+	    set name $T
+	    set type unknown
+	    return [sendPage $r spam]
+	}
 	lassign [InfoProc [dict get $params T]] N
 	return [Http Redir $r [file join $mount edit?N=$N]]
     }
