@@ -2874,7 +2874,7 @@ namespace eval WikitWub {
 	    set type unknown
 	    return [sendPage $r spam]
 	}
-	lassign [InfoProc [dict get $params T]] N
+	lassign [InfoProc $T] N
 	return [Http Redir $r [file join $mount edit?N=$N]]
     }
 
