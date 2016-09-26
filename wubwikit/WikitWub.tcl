@@ -78,6 +78,7 @@ namespace eval WikitWub {
     variable days_in_history 7
     variable changes_on_welcome_page 5
     variable max_search_results 10000
+    variable spammers
 
     variable perms {}	;# dict of operation -> names, names->passwords
     # perms dict is of the form:
@@ -2238,6 +2239,7 @@ namespace eval WikitWub {
 	variable pageURL
 	variable recent_cache
 	variable pagecaching
+	variable spammers
 
 	Debug.wikit {/edit/save N:$N A:$A O:$O preview:$preview save:$save cancel:$cancel upload:$upload}
 	Debug.wikit {Query: [dict get $r -Query] / [dict get $r -entity]}
@@ -2258,6 +2260,14 @@ namespace eval WikitWub {
 	if {$readonly ne ""} {
 	    Debug.wikit {/edit/save failed wiki is readonly}
 	    return [sendPage $r ro]
+	}
+
+	# Block spammers
+	set sip [dict get $r -ipaddr]
+	puts "Spammer? $sip [info exists spammers($sip)]"
+	if {[info exists spammers($sip)] && $spammers($sip) >= [clock seconds]} {
+	    puts "Blocking spammer from $sip"
+	    return [Http NotFound $r]
 	}
 
 	if {![string is integer -strict $N]} {
@@ -2384,6 +2394,15 @@ namespace eval WikitWub {
 		if {[bogofilter $name title]} {
 		    return [sendPage $r spam]
 		}
+	    }
+	    # If C eq "SPAM", a spam page is being cleared. Replace SPAM by a single space and mark the old IP address as a spammer
+	    if {[string trim $C] eq "SPAM"} {
+		puts "Spammer alert! $who"
+		if {[regexp {^(.+)[,@](.*)} $who - who_nick who_ip]} {
+		    puts "Block $who_ip until [clock format [expr {[clock seconds] + 24 * 60 * 60}]]"
+		    set spammers($who_ip) [expr {[clock seconds] + 24 * 60 * 60}]
+		}
+		set C " "
 	    }
 	    # Check spam by calling bogofilter on content
 	    if {[bogofilter $C body]} {
