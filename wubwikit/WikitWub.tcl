@@ -2265,8 +2265,9 @@ namespace eval WikitWub {
 	# Block spammers
 	set sip [dict get $r -ipaddr]
 	puts "Spammer? $sip [info exists spammers($sip)]"
-	if {[info exists spammers($sip)] && $spammers($sip) >= [clock seconds]} {
+	if {[info exists spammers($sip)] && ($spammers($sip) eq "forever" || ([string is int -strict $spammers($sip)] && $spammers($sip) >= [clock seconds]))} {
 	    puts "Blocking spammer from $sip"
+	    # TODO: Redirect to page describing why edit was rejected
 	    return [Http NotFound $r]
 	}
 
