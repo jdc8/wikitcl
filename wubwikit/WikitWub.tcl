@@ -2268,7 +2268,7 @@ namespace eval WikitWub {
 	if {$spammerKnown && ($blockEndDate eq "forever" || ([string is int -strict $blockEndDate] && $blockEndDate >= [clock seconds]))} {
 	    puts "Blocking spammer from $sip"
 	    # TODO: Redirect to page describing why edit was rejected
-	    return [Http NotFound $r]
+	    return [Http Redir $r "http://[dict get $r host]/spam"]
 	}
 
 	if {![string is integer -strict $N]} {
