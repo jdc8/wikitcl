@@ -78,7 +78,6 @@ namespace eval WikitWub {
     variable days_in_history 7
     variable changes_on_welcome_page 5
     variable max_search_results 10000
-    variable spammers
 
     variable perms {}	;# dict of operation -> names, names->passwords
     # perms dict is of the form:
@@ -2239,7 +2238,6 @@ namespace eval WikitWub {
 	variable pageURL
 	variable recent_cache
 	variable pagecaching
-	variable spammers
 
 	Debug.wikit {/edit/save N:$N A:$A O:$O preview:$preview save:$save cancel:$cancel upload:$upload}
 	Debug.wikit {Query: [dict get $r -Query] / [dict get $r -entity]}
@@ -2264,8 +2262,10 @@ namespace eval WikitWub {
 
 	# Block spammers
 	set sip [dict get $r -ipaddr]
+	set blockEndDate "forever"
+	set spammerKnown [WDB SpammerKnown $sip blockEndDate]
 	puts "Spammer? $sip [info exists spammers($sip)]"
-	if {[info exists spammers($sip)] && ($spammers($sip) eq "forever" || ([string is int -strict $spammers($sip)] && $spammers($sip) >= [clock seconds]))} {
+	if {$spammerKnown && ($blockEndDate eq "forever" || ([string is int -strict $blockEndDate] && $blockEndDate >= [clock seconds]))} {
 	    puts "Blocking spammer from $sip"
 	    # TODO: Redirect to page describing why edit was rejected
 	    return [Http NotFound $r]
@@ -2401,7 +2401,7 @@ namespace eval WikitWub {
 		puts "Spammer alert! $who"
 		if {[regexp {^(.+)[,@](.*)} $who - who_nick who_ip]} {
 		    puts "Block $who_ip until [clock format [expr {[clock seconds] + 24 * 60 * 60}]]"
-		    set spammers($who_ip) [expr {[clock seconds] + 24 * 60 * 60}]
+		    WDB UpdateSpammer $who_ip [expr {[clock seconds] + 24 * 60 * 60}]
 		}
 		set C " "
 	    }

@@ -74,6 +74,12 @@ if {0} {
        FOREIGN KEY (fromid) references pages(id),
        FOREIGN KEY (toid) references pages(id));
     CREATE INDEX refs_toid_index ON refs (toid);
+
+    CREATE TABLE spammers (
+       ip TEXT NOT NULL,
+       blockEndDate TEXT NOT NULL,
+       PRIMARY KEY (ip)
+    );
 }
 
 namespace eval WDB {
@@ -158,6 +164,9 @@ namespace eval WDB {
 		                                                   FROM pages_content
 		                                                   WHERE lower(content) = lower(:redir)} }
 		"names"                                 { set sql {SELECT id, name FROM pages} }
+		"spammer_for_ip"                        { set sql {SELECT ip, blockEndDate FROM spammers WHERE ip = :ip} }
+		"insert_spammer"                        { set sql {INSERT INTO spammers (ip, blockEndDate) VALUES (:ip, :blockEndDate)} }
+		"update_spammer"                        { set sql {UPDATE spammers SET blockEndDate = :blockEndDate WHERE ip = :ip} }
 		default { error "Unknown statement '$name'" }
 	    }
 	    set statements($name) [$db prepare $sql]
@@ -1284,6 +1293,23 @@ namespace eval WDB {
 	}
 
 	Debug.WDB {done.}
+    }
+
+    proc SpammerKnown {ip blockEndDateName} {
+	upvar blockEndDateName blockEndDate
+	[statement "spammer_for_ip"] foreach -as dicts d {
+	    set blockEndDate [dict get $d blockEndDate]
+	    return 1
+	}
+	return 0
+    }
+
+    proc UpdateSpammer {ip blockEndDate} {
+	if {[SpammerKnown $ip t]} {
+	    [statement "update_spammer"] allrows
+	} else {
+	    [statement "insert_spammer"] allrows
+	}
     }
 
     proc pagecache {cmd args} {
